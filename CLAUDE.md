@@ -56,24 +56,29 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
 
 ## Facts found in the upstream source code
 
-**ITR** (`omersabary/Reconstruction`, folder `Iterative/`, license "TBA"):
+**ITR** (`omersabary/Reconstruction`, folder `Iterative/`, license "TBA"). Full audit:
+`docs/upstream_notes.md`.
 - Standard C++ only; build per the README: `g++ -std=c++0x -O3 ... *.cpp -o DNA`.
-- `main(argc, argv)`: `argv[1]` input file, `argv[2]` output dir; writes `output.txt`,
-  `output-results-success.txt`, `output-results-fail.txt`. Reports edit-distance histograms
-  (it compares against the original itself).
-- Input format per cluster: line 1 = **original strand**, line 2 = `*****`, then reads, then
-  blank line(s). Our wrapper must write a **placeholder** on line 1 and we must verify ITR
-  never uses it for reconstruction decisions (gate G2.3).
-- `maxCopies = 25` (uses at most 25 reads per cluster); keep this upstream default.
-- `TestFromFileCaseRange(..., 150, maxCopies, ...)` has a hard-coded `150`; check its meaning.
-- `Cluster2.cpp:29` shuffles clones with the shared generator.
+- `main(argc, argv)`: `argv[1]` input file, `argv[2]` output dir. Input per cluster: line 1 =
+  original strand, line 2 = `*****`, then reads, cluster ends after **two** blank lines.
+- **ITR uses the original strand only through its length** (`FinalGuess(..., original.size())`).
+  So the wrapper passes a placeholder of the expected length; G2.3 test to confirm on Day 2.
+- `maxCopies = 25`: keeps the **first 25 reads in file order** (keep this upstream default).
+- The hard-coded `150` is an unused `strandLen` argument: no effect.
+- The shared clock-seeded `mt19937` is used for tie-breaking during reconstruction.
+  `Cluster2.cpp:29` shuffle is only in the synthetic-data constructor (not used for files).
+  Upstream also draws from the generator against the true strand after each cluster; our
+  per-cluster reseed removes that cross-cluster dependency.
+- About 0.9 s/cluster on this laptop (20-cluster smoke run).
 
 **BBS** (`GZHoffie/bbs`, MIT, Rust edition 2024, v0.2.0):
 - `bbs <Clusters.txt> -l 110 -o out.csv` gives the verbose CSV
   `read_id,reconstruction_result,k,path_weight,confidence`.
 - Input formats: `microsoft` (CNR dataset) and `dna_storage_toolkit`.
-- **Uses rayon threads: `-t` defaults to ALL logical CPUs.** Always pass `-t` equal to the
-  worker cap, or scaling experiments silently oversubscribe.
+- **`-t` defaults to ALL logical CPUs** (spawns that many worker threads). Always pass `-t`
+  equal to the worker cap, or scaling experiments silently oversubscribe.
+- **Empty clusters produce no CSV row and `read_id` counts only non-empty clusters.** The
+  adapter writes only non-empty clusters and maps rows back by order (check row count).
 - Beam width flag, default 20 (the "wider beam" fallback candidate).
 
 ## Rules (from the design doc; mandatory)
@@ -103,6 +108,14 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
 
 ## Current status
 
-- 28 Sep 2026: environment and repo ready. **Next: Week 1, Day 1** (see `docs/PLAN.md`).
-- Not yet verified: the guide's sanity targets (BBS 94.8%, ITR 87.6% on Microsoft data).
-  Check them against the BBS paper before using them.
+- 28 Sep 2026: environment and repo ready.
+- 28 Sep 2026, Day 1 done: skeleton, venv (`requirements.lock`), `scripts/setup_external.sh`
+  (BBS + ITR build at pins in `scripts/external_pins.env`), `scripts/download_microsoft.sh`,
+  `scripts/validate_environment.py` (all PASS), eligibility rule (`docs/data_policy.md`),
+  split `data/splits/microsoft_cnr_split.csv` (seed 20260928: 3,000 dev / 7,000 test;
+  16 empty clusters). **Next: Day 2** (ITR wrapper, BBS adapter, metrics).
+- Sanity targets **verified** in the BBS paper (iScience 2025, Table 2, "Srinivasavaradhan
+  et al." = Microsoft CNR, all 10,000 clusters, default parameters, beam 20): success rate
+  (exact match) BBS 94.77%, ITR 87.58%, CPL 94.93%; ITR took 7,352 s (~0.74 s/cluster, i9-13900H).
+  The paper does not say how empty clusters were counted; with 16 empty clusters the
+  difference is at most 0.16 points.

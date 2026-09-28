@@ -18,8 +18,8 @@ The unknown that decides the project: **does ITR fix the clusters BBS gets wrong
 (On real Nanopore data BBS beat ITR overall.)
 
 - 1,000 random clusters from the **dev split** of the Microsoft CNR dataset.
-- Sanity check against the BBS paper (targets roughly BBS 94.8%, ITR 87.6% exact match;
-  **verify these numbers in the paper first**). If we are far off, fix the setup first.
+- Sanity check against the BBS paper, Table 2 (Microsoft CNR: BBS 94.77%, ITR 87.58%,
+  CPL 94.93% exact match; verified 28 Sep). If we are far off, fix the setup first.
 - Build the 2×2 table and AUROC:
 
 |              | ITR correct | ITR wrong |

@@ -1,0 +1,14 @@
+# Microsoft Clustered Nanopore Reads (CNR) dataset: location, eligibility and split.
+# Changing seed or dev_fraction changes the split; data/splits/ must then be regenerated
+# and every result produced with the old split marked invalid.
+dataset_id: microsoft_cnr
+clusters_path: data/raw/microsoft_cnr/Clusters.txt
+centers_path: data/raw/microsoft_cnr/Centers.txt
+checksums_path: data/splits/microsoft_cnr.sha256
+expected_length: 110
+expected_clusters: 10000
+
+split:
+  seed: 20260928
+  dev_fraction: 0.30
+  output_path: data/splits/microsoft_cnr_split.csv
