@@ -1,0 +1,6 @@
+# ITR (iterative reconstruction) run settings. Algorithm parameters are upstream's and
+# fixed inside adapters/itr_native/itr_cli.cpp; only run settings live here.
+binary: external/itr_cli
+# Per-cluster generator seed = FNV-1a-64(cluster_id) XOR seed (adapters/itr_native/PATCH.md).
+seed: 20260928
+timeout_s_per_cluster: 60   # starting value; revisit after the pilot

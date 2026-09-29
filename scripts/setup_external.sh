@@ -6,9 +6,10 @@
 # Result:
 #   external/bbs/target/release/bbs                       BBS binary
 #   external/reconstruction/Iterative/build/DNA           upstream ITR binary (unmodified)
+#   external/itr_cli                                      our ITR wrapper (adapters/itr_native/)
 #
 # ITR's licence is "TBA", so its source lives only in external/ (git-ignored) and
-# is never committed. Our wrapper is built from adapters/itr_native/ once it exists.
+# is never committed. Our wrapper links the upstream objects except DNA.o (upstream main).
 # Safe to re-run: existing clones are reused and checked out at the pinned commit.
 set -euo pipefail
 
@@ -62,5 +63,10 @@ for f in "$ITR_SRC"/*.cpp; do
 done
 g++ -o "$ITR_BUILD/DNA" "$ITR_BUILD"/*.o
 echo "  $ITR_BUILD/DNA"
+
+echo "== Building ITR wrapper (adapters/itr_native, same flags)"
+WRAP_OBJS=$(ls "$ITR_BUILD"/*.o | grep -v '/DNA\.o$')
+g++ $CXXFLAGS -I"$ITR_SRC" -o "$EXT/itr_cli" "$ROOT/adapters/itr_native/itr_cli.cpp" $WRAP_OBJS
+echo "  $EXT/itr_cli"
 
 echo "== Done"
