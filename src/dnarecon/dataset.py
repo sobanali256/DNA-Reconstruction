@@ -14,6 +14,7 @@ Eligibility rule (pre-registered, see docs/data_policy.md):
 from __future__ import annotations
 
 import csv
+import json
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -150,3 +151,42 @@ def read_split_table(path: str | Path) -> dict[str, str]:
     """Return {cluster_id: split} from a committed split file."""
     with open(path, newline="") as handle:
         return {row["cluster_id"]: row["split"] for row in csv.DictReader(handle)}
+
+
+# Normalized cluster records as JSON Lines: one ClusterRecord per line. Used for fixtures
+# and for any dataset converted to our own format.
+def save_records_jsonl(records: list[ClusterRecord], path: str | Path) -> None:
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="ascii") as handle:
+        for r in records:
+            handle.write(json.dumps({
+                "cluster_id": r.cluster_id,
+                "dataset_id": r.dataset_id,
+                "expected_length": r.expected_length,
+                "reads": list(r.reads),
+                "original_sequence": r.original_sequence,
+            }) + "\n")
+
+
+def load_records_jsonl(path: str | Path) -> list[ClusterRecord]:
+    """Load and validate records written by save_records_jsonl."""
+    records, problems = [], []
+    with open(path, encoding="ascii") as handle:
+        for line in handle:
+            if not line.strip():
+                continue
+            d = json.loads(line)
+            record = ClusterRecord(
+                cluster_id=d["cluster_id"],
+                reads=tuple(d["reads"]),
+                expected_length=int(d["expected_length"]),
+                dataset_id=d["dataset_id"],
+                original_sequence=d.get("original_sequence"),
+            )
+            problems.extend(f"{record.cluster_id}: {p}" for p in validate_cluster(record))
+            records.append(record)
+    if len({r.cluster_id for r in records}) != len(records):
+        problems.append("duplicate cluster IDs")
+    if problems:
+        raise ValueError(f"{path}: " + "; ".join(problems[:20]))
+    return records

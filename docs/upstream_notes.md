@@ -32,7 +32,8 @@ Every use was traced:
 | `original.size()`, passed to `FinalGuess` as `correctSize` | `Cluster2::TestBest` (line 1848) | **Yes: length only.** The final guess prefers candidates of exactly this length. |
 | `Clone::UpdateInsertDelete` (LCS vs original → `insertNum`, `deleteNum`) | `Clone.cpp:81` | No. Those counts are read only by `TestInsertGuesses`/`TestDeletionGuesses`, which are diagnostics and never called from `TestBest`. |
 | `Stats4(..., original, ...)` | `TestFixAll*` variants | No. Not on the `TestBest` path. |
-| Edit distance to the original, histograms | `DNA.cpp`, after reconstruction | No, but see randomness below. |
+| Edit distance to the original, histograms | `DNA.cpp`, after reconstruction | No (and it draws nothing from the generator; see Randomness). |
+| `ComputeEditDistancePriority(original, clone)` | `Cluster2::TestSubstitutionGuesses` (`Cluster2.cpp:1072`) | No. Diagnostic with no callers. |
 
 **Conclusion:** the reconstruction depends on the original only through its **length**.
 A placeholder of the expected length (for example 110 × `A`) is enough, and the length is
