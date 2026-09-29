@@ -37,25 +37,29 @@ Every use was traced:
 **Conclusion:** the reconstruction depends on the original only through its **length**.
 A placeholder of the expected length (for example 110 × `A`) is enough, and the length is
 already an allowed input (BBS needs it too; see the known-length assumption in the design
-doc). The wrapper will pass only the expected length. A test in Day 2 will confirm that
-changing the placeholder's letters does not change the output.
+doc). The wrapper passes only the expected length. **Confirmed on 29 Sep 2026**
+(`scripts/check_itr_wrapper.py`): on 45 dev clusters, upstream gives the same output
+with the true strand and with random letters of the same length, and the wrapper
+(placeholder of `A`s) matches both.
 
-### Randomness
+### Randomness (corrected 29 Sep 2026)
 
-- One `mt19937` generator is seeded from the clock once per run and shared by all clusters.
-- It is used during reconstruction for random tie-breaking in edit-distance backtracking
-  (`EditDistance.cpp`, `BacktrackEditDistanceRandom`, `shuffle(priorities)`).
-- The clone `shuffle` at `Cluster2.cpp:29` is in the **synthetic-data constructor** only;
-  the file-reading constructor does not shuffle.
-- After each cluster, upstream `DNA.cpp` calls `ComputeEditDistancePriority(finalGuess,
-  original, ..., generator)` to count error types. This draws from the shared generator
-  using the true strand, so in upstream **one cluster's ground truth changes the random
-  state used to reconstruct the next cluster**. It is a tiny effect, but it is a real
-  dependency.
-- Our wrapper reseeds the generator per cluster from `(fixed seed, cluster ID)` and never
-  computes anything against the original. This makes each cluster reproducible and
-  independent of batch composition and order (needed for gate G5.7), and removes that
-  dependency.
+- One `mt19937` generator is seeded from the clock once per run and passed down through
+  the whole reconstruction.
+- **With upstream's settings it is never drawn from.** The only draws on the
+  reconstruction path are in `ComputeEditDistancePriority` when `priority == 6`
+  (`BacktrackEditDistanceRandom`, `shuffle(priorities)`, `EditDistance.cpp`). Upstream
+  `main` fixes sub/del/ins priorities to `0`, which select the deterministic
+  `BacktrackEditDistancePriority`. The other draws (`MakeStrand`, `CopyStrand`, the
+  `shuffle` at `Cluster2.cpp:29`) are in synthetic-data code that the file path never runs.
+- So **upstream ITR is deterministic** on file input. Measured: on 150 dev clusters the
+  wrapper's output is identical under two different seeds.
+- Our Day 1 note that upstream leaks one cluster's ground truth into the next through the
+  generator was **wrong**: the post-cluster `ComputeEditDistancePriority(finalGuess,
+  original, 0, generator)` call uses priority `0` and draws nothing.
+- The wrapper still creates a per-cluster generator from `(seed, cluster ID)`. It costs
+  nothing and guarantees reproducibility and batch independence (gate G5.7) even if a
+  non-zero priority is ever used. It must not be described as removing a leak.
 
 ### Build
 
@@ -83,3 +87,16 @@ Smoke run, first 20 Microsoft clusters, upstream binary: about 0.9 s per cluster
 - Confidence values from the pinned commit differ from the README example (cluster 1:
   0.999959 now vs 0.909951 in the README). The README example was probably produced by an
   older version (the Rust rewrite and k_max fix came later); not investigated further.
+
+### BBS is not fully deterministic (found 29 Sep 2026)
+
+`find_consensus` (`markov_chain.rs`) keeps candidate scores in a `std::collections::HashMap`,
+whose iteration order is randomised per process. When two or more candidates tie for the
+best score, `max_by` picks whichever comes last in that order, so the **sequence** can
+change between identical runs. The score set does not change, so **`k`, `path_weight` and
+`confidence` are identical** across runs.
+
+Measured on the 2,993 non-empty dev clusters, 4 runs (adapter at `-t 4` twice, `-t 1`,
+and BBS directly on the raw file at `-t 4`): 15 clusters (0.5%) changed sequence, all with
+confidence ≤ 0.5 (exactly 0.5 or 0.25 = a 2- or 4-way tie). Exact matches: 2,879–2,882.
+Thread count is not the cause; the process's hash seed is.

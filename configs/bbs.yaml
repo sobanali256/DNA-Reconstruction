@@ -1,0 +1,8 @@
+# BBS (bidirectional beam search) settings. Values are upstream defaults, written out so
+# a change in upstream defaults cannot silently change our runs. The thread count is not
+# here: every caller must pass it explicitly (the worker cap of the experiment).
+binary: external/bbs/target/release/bbs
+beam_width: 20     # -b
+k_min: 4           # -k
+k_max: 62          # -K
+alpha: 1           # -a

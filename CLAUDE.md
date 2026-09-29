@@ -44,7 +44,7 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
 | Timing hardware | **This laptop only**: i5-10210U, 4 physical / 8 logical cores, 20 GB RAM. 1/2/4 workers = physical; 8 = hyper-threaded, label it so. |
 | Colab Pro | Backup only (if ITR is too slow on the laptop or for reruns). Never report Colab runtimes. |
 | Split | Microsoft dataset: 30% dev / 70% test, fixed random seed. Pilot (1,000 clusters) drawn from **dev only**. τ chosen on dev only. |
-| ITR randomness | Upstream seeds `mt19937` from the clock and shuffles reads; one generator is shared across all clusters in a file. **Our wrapper reseeds per cluster from a fixed seed combined with the cluster ID** (approved). No other change to the algorithm. Document as a patch. |
+| ITR randomness | Upstream seeds `mt19937` from the clock but, with its default priorities (0), never draws from it: ITR is deterministic on file input. **Our wrapper still reseeds per cluster: `FNV-1a-64(cluster_id) XOR seed`** (seed in `configs/itr.yaml`), as a guarantee. No other change to the algorithm. Documented in `adapters/itr_native/PATCH.md`. |
 | Empty clusters | Stay in the denominator as failures; report the count separately. |
 | ITR timeout | Start at 60 s/cluster; adjust after the pilot. Timeout = ITR failure, so the cluster keeps its BBS result. |
 | Caching test split | Allowed (running both tools does not leak); analysis code must filter to dev when choosing τ. |
@@ -53,6 +53,7 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
 | Synthetic grid | 4 total error rates (3/6/9/12%) × coverage {5,10,20} = 12 conditions, balanced errors; the skewed compositions at one coverage only if time allows. |
 | Length-consistency selector | Secondary variant, computed from the cache. |
 | BBS timing | Per batch/shard only; never invent per-cluster BBS runtimes. ITR timing per cluster. |
+| BBS nondeterminism | BBS breaks score ties by random HashMap order (~0.5% of clusters, all confidence ≤ 0.5, confidence itself stable). Cache **one** run as canonical; measure and report run-to-run variability from ~5 repeats. No patch to BBS. |
 
 ## Facts found in the upstream source code
 
@@ -62,13 +63,13 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
 - `main(argc, argv)`: `argv[1]` input file, `argv[2]` output dir. Input per cluster: line 1 =
   original strand, line 2 = `*****`, then reads, cluster ends after **two** blank lines.
 - **ITR uses the original strand only through its length** (`FinalGuess(..., original.size())`).
-  So the wrapper passes a placeholder of the expected length; G2.3 test to confirm on Day 2.
+  So the wrapper passes a placeholder of the expected length (G2.3 confirmed 29 Sep).
 - `maxCopies = 25`: keeps the **first 25 reads in file order** (keep this upstream default).
 - The hard-coded `150` is an unused `strandLen` argument: no effect.
-- The shared clock-seeded `mt19937` is used for tie-breaking during reconstruction.
+- The shared clock-seeded `mt19937` is passed around but **never drawn from** with upstream's
+  priorities (0); random backtracking needs priority 6. ITR is deterministic on file input.
   `Cluster2.cpp:29` shuffle is only in the synthetic-data constructor (not used for files).
-  Upstream also draws from the generator against the true strand after each cluster; our
-  per-cluster reseed removes that cross-cluster dependency.
+  (The Day 1 claim that upstream leaks ground truth across clusters via the RNG was wrong.)
 - About 0.9 s/cluster on this laptop (20-cluster smoke run).
 
 **BBS** (`GZHoffie/bbs`, MIT, Rust edition 2024, v0.2.0):
@@ -113,7 +114,11 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
   (BBS + ITR build at pins in `scripts/external_pins.env`), `scripts/download_microsoft.sh`,
   `scripts/validate_environment.py` (all PASS), eligibility rule (`docs/data_policy.md`),
   split `data/splits/microsoft_cnr_split.csv` (seed 20260928: 3,000 dev / 7,000 test;
-  16 empty clusters). **Next: Day 2** (ITR wrapper, BBS adapter, metrics).
+  16 empty clusters).
+- 29 Sep 2026, Day 2 in progress: ITR wrapper `external/itr_cli` (verified identical to
+  upstream, `scripts/check_itr_wrapper.py`); BBS adapter `src/dnarecon/bbs_adapter.py`
+  (dev: 95.97% exact). Found: ITR is deterministic; BBS is not (ties). **Next:** ITR
+  adapter (Python, timeout), metrics, 10-cluster fixture, ResultRecord.
 - Sanity targets **verified** in the BBS paper (iScience 2025, Table 2, "Srinivasavaradhan
   et al." = Microsoft CNR, all 10,000 clusters, default parameters, beam 20): success rate
   (exact match) BBS 94.77%, ITR 87.58%, CPL 94.93%; ITR took 7,352 s (~0.74 s/cluster, i9-13900H).

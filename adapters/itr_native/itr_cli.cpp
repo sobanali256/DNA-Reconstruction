@@ -7,7 +7,9 @@
 //   1. Input carries no ground truth. ITR reads the original strand only for its length
 //      (docs/upstream_notes.md), so a placeholder of the expected length is passed.
 //   2. The mt19937 generator is reseeded for every cluster from
-//      FNV-1a-64(cluster_id) XOR seed, instead of once per run from the clock.
+//      FNV-1a-64(cluster_id) XOR seed, instead of once per run from the clock. With
+//      upstream's priorities (0) the generator is never drawn from, so this changes no
+//      output; it guarantees reproducibility if a random priority is ever used.
 //   3. Nothing is computed against the original after reconstruction.
 //
 // Usage: itr_cli --seed <uint64> [input_file]      (reads stdin when no file is given)

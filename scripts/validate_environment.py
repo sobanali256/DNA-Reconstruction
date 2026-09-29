@@ -12,6 +12,7 @@ import hashlib
 import importlib.metadata
 import json
 import os
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -21,6 +22,7 @@ from dnarecon.provenance import ROOT, git_head, provenance, read_pins, run_text
 REQUIRED_PACKAGES = ["numpy", "pandas", "matplotlib", "scikit-learn", "PyYAML", "edlib", "psutil", "pytest"]
 BBS_BIN = ROOT / "external" / "bbs" / "target" / "release" / "bbs"
 ITR_UPSTREAM_BIN = ROOT / "external" / "reconstruction" / "Iterative" / "build" / "DNA"
+ITR_WRAPPER_BIN = ROOT / "external" / "itr_cli"
 MSCNR_DIR = ROOT / "data" / "raw" / "microsoft_cnr"
 CHECKSUMS = ROOT / "data" / "splits" / "microsoft_cnr.sha256"
 SPLIT_FILE = ROOT / "data" / "splits" / "microsoft_cnr_split.csv"
@@ -66,6 +68,22 @@ def check_executable(path: Path, version_cmd: list[str] | None = None) -> tuple[
     return True, str(path.relative_to(ROOT))
 
 
+def check_itr_wrapper() -> tuple[bool, str]:
+    """The wrapper must build and reconstruct a trivial 3-read cluster."""
+    ok, detail = check_executable(ITR_WRAPPER_BIN)
+    if not ok:
+        return ok, detail
+    try:
+        out = subprocess.run([str(ITR_WRAPPER_BIN), "--seed", "1"], input=">t 4 3\nACGT\nACGT\nACGA\n",
+                             capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return False, f"failed to run: {exc}"
+    rows = out.stdout.splitlines()
+    if out.returncode != 0 or len(rows) != 2 or rows[1].split("\t")[1:2] != ["ok"]:
+        return False, f"unexpected output (exit {out.returncode}): {out.stdout!r} {out.stderr!r}"
+    return True, detail
+
+
 def check_dataset() -> tuple[bool, str]:
     if not MSCNR_DIR.is_dir():
         return False, "missing: run scripts/download_microsoft.sh"
@@ -93,6 +111,7 @@ def main() -> None:
         "itr_source": check_pinned(ROOT / "external" / "reconstruction", "ITR_COMMIT"),
         "bbs_binary": check_executable(BBS_BIN, ["-V"]),
         "itr_upstream_binary": check_executable(ITR_UPSTREAM_BIN),
+        "itr_wrapper": check_itr_wrapper(),
         "microsoft_dataset": check_dataset(),
         "microsoft_split": check_split(),
     }

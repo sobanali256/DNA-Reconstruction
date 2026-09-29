@@ -39,6 +39,7 @@ bash scripts/setup_external.sh                     # clone + build BBS and ITR a
 bash scripts/download_microsoft.sh                 # Microsoft CNR dataset, checksum-verified
 .venv/bin/python scripts/make_split.py configs/dataset_microsoft.yaml --check
 .venv/bin/python scripts/validate_environment.py   # all checks must PASS
+.venv/bin/python scripts/check_itr_wrapper.py      # our ITR wrapper == upstream ITR
 .venv/bin/pytest
 ```
 
