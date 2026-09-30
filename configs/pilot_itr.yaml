@@ -1,0 +1,13 @@
+# Day 3 pilot, ITR-only baseline on the 1,000-cluster dev sample. One worker, so the
+# per-cluster times are the clean serial cost (used to size the full runs). ITR is
+# deterministic (Day 2), so one repetition.
+experiment_name: pilot_itr
+dataset: configs/dataset_microsoft.yaml
+clusters: data/splits/microsoft_pilot1000.csv
+method: itr_only
+itr:
+  config: configs/itr.yaml
+  workers: 1
+  microbatch_size: 25
+repetitions: 1
+output_root: results/

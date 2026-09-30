@@ -190,3 +190,36 @@ def load_records_jsonl(path: str | Path) -> list[ClusterRecord]:
     if problems:
         raise ValueError(f"{path}: " + "; ".join(problems[:20]))
     return records
+
+
+# Pilot sample: a fixed random subset of the dev split, drawn from the split file alone
+# (cluster IDs, split labels and read counts; never ground truth or test clusters).
+PILOT_COLUMNS = ["cluster_id", "n_reads"]
+
+
+def draw_pilot(split_path: str | Path, size: int, seed: int) -> list[tuple[str, int]]:
+    """Return (cluster_id, n_reads) for `size` random dev clusters, in file order."""
+    with open(split_path, newline="") as handle:
+        dev = [(row["cluster_id"], int(row["n_reads"]))
+               for row in csv.DictReader(handle) if row["split"] == SPLIT_DEV]
+    if not 0 < size <= len(dev):
+        raise ValueError(f"pilot size {size} not in 1..{len(dev)} dev clusters")
+    chosen = np.random.default_rng(seed).choice(len(dev), size=size, replace=False)
+    return [dev[i] for i in sorted(chosen.tolist())]
+
+
+def write_pilot(rows: list[tuple[str, int]], path: str | Path) -> None:
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", newline="") as handle:
+        writer = csv.writer(handle, lineterminator="\n")
+        writer.writerow(PILOT_COLUMNS)
+        writer.writerows(rows)
+
+
+def read_cluster_list(path: str | Path) -> list[str]:
+    """Cluster IDs from a list file with a `cluster_id` column (e.g. the pilot sample)."""
+    with open(path, newline="") as handle:
+        ids = [row["cluster_id"] for row in csv.DictReader(handle)]
+    if len(set(ids)) != len(ids):
+        raise ValueError(f"{path}: duplicate cluster IDs")
+    return ids

@@ -12,3 +12,9 @@ split:
   seed: 20260928
   dev_fraction: 0.30
   output_path: data/splits/microsoft_cnr_split.csv
+
+# Pilot (Day 3): a fixed random sample of dev clusters, drawn from the split file only.
+pilot:
+  size: 1000
+  seed: 20260930
+  output_path: data/splits/microsoft_pilot1000.csv

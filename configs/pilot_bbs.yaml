@@ -1,0 +1,13 @@
+# Day 3 pilot, BBS-only baseline on the 1,000-cluster dev sample.
+# Repetition 1 is the canonical cached run; repetitions 2-6 measure how much BBS output
+# changes between runs (it breaks score ties by random HashMap order; see CLAUDE.md).
+experiment_name: pilot_bbs
+dataset: configs/dataset_microsoft.yaml
+clusters: data/splits/microsoft_pilot1000.csv
+method: bbs_only
+bbs:
+  config: configs/bbs.yaml
+  threads: 4       # physical cores; thread count changes speed only, not results
+  shards: 1
+repetitions: 6
+output_root: results/
