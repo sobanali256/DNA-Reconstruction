@@ -122,7 +122,12 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
   Gates G2.3, G2.4, G5.7 pass. Found: ITR is deterministic; BBS is not (ties, 0.5%).
   Metrics `src/dnarecon/metrics.py` (G2.5 pass): Hamming = BBS paper formula; no output
   = empty prediction (ED = Hamming = length); summaries also give with-output-only means.
-  **Next:** ResultRecord (plan first), then Day 3 pilot.
+  ResultRecord (`models.py`) + `src/dnarecon/results.py`: `build_record` (engine outputs
+  only; ITR success wins, else BBS, else failed; whole-task failures via
+  `bbs_shard_failed`/`itr_task_failed`) → `attach_metrics` (ground truth, last step; final,
+  BBS and ITR scored separately for the 2×2) → `results/<run_id>/per_cluster.csv` +
+  `timing.csv` (writers never overwrite). `total_cluster_runtime_ms` only in ITR-only runs.
+  **Day 2 complete. Next:** Day 3 pilot (runner + run manifest, 1,000 dev clusters).
 - Sanity targets **verified** in the BBS paper (iScience 2025, Table 2, "Srinivasavaradhan
   et al." = Microsoft CNR, all 10,000 clusters, default parameters, beam 20): success rate
   (exact match) BBS 94.77%, ITR 87.58%, CPL 94.93%; ITR took 7,352 s (~0.74 s/cluster, i9-13900H).

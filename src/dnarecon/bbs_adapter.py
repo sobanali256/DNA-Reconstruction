@@ -62,6 +62,8 @@ class BbsShardResult:
     wall_time_s: float
     threads: int
     command: list[str]
+    started_at: float  # epoch seconds, for the run timeline (wall_time_s is the precise duration)
+    ended_at: float
 
 
 class BbsRunError(RuntimeError):
@@ -146,6 +148,7 @@ def run_shard(
     write_microsoft_input(records, input_path)
     command = build_command(settings, input_path, output_path, length, threads)
 
+    started_at = time.time()
     start = time.perf_counter()
     try:
         with open(log_path, "w") as log:
@@ -153,10 +156,11 @@ def run_shard(
     except subprocess.TimeoutExpired as exc:
         raise BbsRunError(f"shard {shard_id}: BBS timed out after {timeout_s} s") from exc
     wall_time_s = time.perf_counter() - start
+    ended_at = time.time()
 
     if proc.returncode != 0:
         raise BbsRunError(f"shard {shard_id}: BBS exited with {proc.returncode}, see {log_path}")
     if not output_path.exists():
         raise BbsRunError(f"shard {shard_id}: BBS wrote no CSV, see {log_path}")
     results = parse_output(output_path, [r.cluster_id for r in records])
-    return BbsShardResult(shard_id, results, wall_time_s, threads, command)
+    return BbsShardResult(shard_id, results, wall_time_s, threads, command, started_at, ended_at)
