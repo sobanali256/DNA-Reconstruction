@@ -115,10 +115,14 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
   `scripts/validate_environment.py` (all PASS), eligibility rule (`docs/data_policy.md`),
   split `data/splits/microsoft_cnr_split.csv` (seed 20260928: 3,000 dev / 7,000 test;
   16 empty clusters).
-- 29 Sep 2026, Day 2 in progress: ITR wrapper `external/itr_cli` (verified identical to
-  upstream, `scripts/check_itr_wrapper.py`); BBS adapter `src/dnarecon/bbs_adapter.py`
-  (dev: 95.97% exact). Found: ITR is deterministic; BBS is not (ties). **Next:** ITR
-  adapter (Python, timeout), metrics, 10-cluster fixture, ResultRecord.
+- 29–30 Sep 2026, Day 2 mostly done (pushed, `3d1c569`): ITR wrapper `external/itr_cli`
+  (identical to upstream, `scripts/check_itr_wrapper.py`); BBS adapter
+  `src/dnarecon/bbs_adapter.py` (dev: 95.97% exact); ITR adapter `src/dnarecon/itr_adapter.py`
+  (per-cluster timeout, crash containment); fixture `data/fixtures/microsoft_dev10.jsonl`.
+  Gates G2.3, G2.4, G5.7 pass. Found: ITR is deterministic; BBS is not (ties, 0.5%).
+  Metrics `src/dnarecon/metrics.py` (G2.5 pass): Hamming = BBS paper formula; no output
+  = empty prediction (ED = Hamming = length); summaries also give with-output-only means.
+  **Next:** ResultRecord (plan first), then Day 3 pilot.
 - Sanity targets **verified** in the BBS paper (iScience 2025, Table 2, "Srinivasavaradhan
   et al." = Microsoft CNR, all 10,000 clusters, default parameters, beam 20): success rate
   (exact match) BBS 94.77%, ITR 87.58%, CPL 94.93%; ITR took 7,352 s (~0.74 s/cluster, i9-13900H).
