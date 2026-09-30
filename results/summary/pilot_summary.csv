@@ -1,0 +1,47 @@
+section,metric,value,paper,note
+bbs,n_clusters,1000,,
+bbs,n_empty_clusters,2,,
+bbs,n_failed,2,,no output (empty clusters included)
+bbs,exact_rate,0.9670,0.9477,all clusters in the denominator
+bbs,failure_rate,0.0020,,
+bbs,mean_edit_distance_all,0.3350,,failures count as length
+bbs,mean_edit_distance_with_output,0.1152,0.1680,
+bbs,mean_normalized_edit_distance_all,0.0030,,
+bbs,mean_hamming_distance_all,1.2940,,
+bbs,mean_hamming_distance_with_output,1.0762,1.6160,
+itr,n_clusters,1000,,
+itr,n_empty_clusters,2,,
+itr,n_failed,2,,no output (empty clusters included)
+itr,exact_rate,0.8850,0.8758,all clusters in the denominator
+itr,failure_rate,0.0020,,
+itr,mean_edit_distance_all,0.4090,,failures count as length
+itr,mean_edit_distance_with_output,0.1894,0.2320,
+itr,mean_normalized_edit_distance_all,0.0037,,
+itr,mean_hamming_distance_all,4.6420,,
+itr,mean_hamming_distance_with_output,4.4309,4.7970,
+itr_time,clusters_run,998,,
+itr_time,mean_s_per_cluster,1.0427,0.7350,"successful clusters; paper value = 7,351.52 s / 10,000 on an i9-13900H"
+itr_time,median_s_per_cluster,1.1157,,
+itr_time,p95_s_per_cluster,1.7788,,
+itr_time,max_s_per_cluster,5.0070,,
+itr_time,sum_of_cluster_times_s,1040.5701,,
+itr_time,stage_wall_s,1040.9228,,"1 worker, includes process start-up"
+itr_time,stage_wall_s_per_cluster,1.0430,,
+itr_time,estimate_full_dataset_serial_h,2.8972,,"stage wall time per cluster x 10,000"
+itr_time,estimate_full_dataset_4_workers_ideal_h,0.7243,,ideal speed-up; real will be lower
+itr_time,n_timeout,0,,
+itr_time,n_crashed,0,,
+itr_time,n_error,0,,
+itr_time,n_task_failed,0,,
+bbs_time,repetitions,6,,
+bbs_time,stage_wall_s_median,2.5823,2.0010,"4 threads; paper value scaled from 20.01 s / 10,000 clusters on an i9-13900H"
+bbs_time,stage_wall_s_min,1.4455,,
+bbs_time,stage_wall_s_max,3.2235,,
+bbs_variability,clusters_with_changed_sequence,3,,"vs the canonical run (repetition 1), over all repeats"
+bbs_variability,clusters_with_changed_k_weight_or_confidence,0,,expected 0
+bbs_variability,max_confidence_of_changed_clusters,0.2678,,
+bbs_variability,cluster_comparisons_skipped_shard_failed,0,,expected 0
+bbs_variability,exact_count_min,966,,
+bbs_variability,exact_count_max,967,,
+runs,bbs_canonical_run,pilot_bbs-20260930-191013-r1,,
+runs,itr_run,pilot_itr-20260930-212355-r1,,

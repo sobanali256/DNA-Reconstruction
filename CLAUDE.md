@@ -127,7 +127,15 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
   `bbs_shard_failed`/`itr_task_failed`) → `attach_metrics` (ground truth, last step; final,
   BBS and ITR scored separately for the 2×2) → `results/<run_id>/per_cluster.csv` +
   `timing.csv` (writers never overwrite). `total_cluster_runtime_ms` only in ITR-only runs.
-  **Day 2 complete. Next:** Day 3 pilot (runner + run manifest, 1,000 dev clusters).
+  **Day 2 complete.**
+- 30 Sep 2026, Day 3 done: pilot sample `data/splits/microsoft_pilot1000.csv` (1,000 dev,
+  seed 20260930); runner `scripts/run_experiment.py <config>` (one `results/<run_id>/`
+  per repetition: manifest.json, per_cluster.csv, timing.csv, raw/; refuses a dirty tree);
+  `analysis/pilot_summary.py`. Pilot (`docs/pilot_notes.md`): BBS 96.70% exact, ITR 88.50%
+  (paper 94.77 / 87.58; ranking and gap reproduce); ITR 1.04 s/cluster (full set ≈ 2.9 h
+  serial); BBS 3/1,000 clusters vary across 6 runs. Canonical cache runs:
+  `pilot_bbs-20260930-191013-r1`, `pilot_itr-20260930-212355-r1`.
+  **Next:** Day 4: 2×2 table, AUROC, benefit/harm vs τ from the cache, go/no-go.
 - Sanity targets **verified** in the BBS paper (iScience 2025, Table 2, "Srinivasavaradhan
   et al." = Microsoft CNR, all 10,000 clusters, default parameters, beam 20): success rate
   (exact match) BBS 94.77%, ITR 87.58%, CPL 94.93%; ITR took 7,352 s (~0.74 s/cluster, i9-13900H).
