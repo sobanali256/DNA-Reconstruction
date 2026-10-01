@@ -11,7 +11,8 @@ import yaml
 from dnarecon import runner
 from dnarecon.models import ClusterRecord
 from dnarecon.results import read_per_cluster, read_timing
-from dnarecon.runner import DirtyTreeError, _chunks, load_config, run_experiment
+from dnarecon.dataset import save_records_jsonl
+from dnarecon.runner import DirtyTreeError, _chunks, load_clusters, load_config, run_experiment
 
 TRUTH = "ACGT"
 
@@ -76,6 +77,7 @@ def test_valid_configs_load(tmp_path, method):
     {"experiment_name": "bad name/"},
     {"bbs": {"config": "bbs.yaml", "threads": 1}},  # shards missing
     {"bbs": {"config": "bbs.yaml", "threads": 0, "shards": 1}},
+    {"split": "train"},
 ])
 def test_invalid_bbs_configs_rejected(tmp_path, change):
     with pytest.raises(ValueError):
@@ -159,6 +161,22 @@ def test_crash_marks_the_run_failed_and_keeps_the_folder(root, monkeypatch):
 def test_clusters_without_split_rejected(root):
     with pytest.raises(ValueError):
         run_experiment(config(), clusters(), {"a": "dev"}, root=root, log=lambda m: None)
+
+
+def test_split_key_keeps_only_that_split(root):
+    save_records_jsonl(clusters(), root / "r.jsonl")
+    (root / "split.csv").write_text("cluster_id,split\na,dev\nb,test\ne,dev\n")
+    (root / "ds.yaml").write_text(yaml.safe_dump({"records_path": "r.jsonl",
+                                                  "split": {"output_path": "split.csv"}}))
+    pick = lambda **k: [c.cluster_id for c in load_clusters(config(dataset="ds.yaml", **k), root)[0]]
+    assert (pick(), pick(split="dev"), pick(split="test")) == (["a", "b", "e"], ["a", "e"], ["b"])
+
+
+def test_log_never_shows_test_accuracy(root):
+    lines = []
+    run_experiment(config(), clusters(), {"a": "dev", "b": "test", "e": "test"}, root=root,
+                   log=lines.append)
+    assert "0/1 dev exact" in lines[-1]
 
 
 def test_chunks_are_contiguous_and_balanced():

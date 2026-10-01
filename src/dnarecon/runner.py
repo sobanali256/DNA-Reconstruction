@@ -31,7 +31,7 @@ import yaml
 
 from dnarecon import provenance as prov
 from dnarecon.bbs_adapter import BbsRunError, BbsSettings, run_shard
-from dnarecon.dataset import load_microsoft, read_cluster_list, read_split_table
+from dnarecon.dataset import SPLIT_DEV, load_dataset, read_cluster_list, read_split_table
 from dnarecon.itr_adapter import ItrRunError, ItrSettings, run_itr_batch
 from dnarecon.models import ClusterRecord
 from dnarecon.results import (
@@ -68,6 +68,8 @@ def load_config(path: str | Path) -> dict:
         raise ValueError(f"{path}: adaptive runs need the router (Week 2); run bbs_only and itr_only")
     if method not in RUNNABLE_METHODS:
         raise ValueError(f"{path}: unknown method {method!r}")
+    if cfg.get("split", "dev") not in ("dev", "test"):
+        raise ValueError(f"{path}: split must be dev or test")
     if int(cfg["repetitions"]) < 1:
         raise ValueError(f"{path}: repetitions must be >= 1")
     if method == "bbs_only":
@@ -92,16 +94,17 @@ def load_config(path: str | Path) -> dict:
 def load_clusters(cfg: dict, root: Path = ROOT) -> tuple[list[ClusterRecord], dict[str, str]]:
     """The config's cluster list (in list order) and the split of every cluster."""
     ds = yaml.safe_load((root / cfg["dataset"]).read_text())
-    records = load_microsoft(root / ds["clusters_path"], root / ds["centers_path"],
-                             ds["expected_length"], ds["dataset_id"])
-    by_id = {r.cluster_id: r for r in records}
+    by_id = {r.cluster_id: r for r in load_dataset(ds, root)}
+    splits = read_split_table(root / ds["split"]["output_path"])
     ids = read_cluster_list(root / cfg["clusters"])
+    if "split" in cfg:  # optional: run only the dev or the test clusters of the list
+        ids = [cid for cid in ids if splits.get(cid) == cfg["split"]]
     unknown = [cid for cid in ids if cid not in by_id]
     if unknown:
         raise ValueError(f"{len(unknown)} unknown cluster IDs, e.g. {unknown[:3]}")
     if not ids:
         raise ValueError("empty cluster list")
-    return [by_id[cid] for cid in ids], read_split_table(root / ds["split"]["output_path"])
+    return [by_id[cid] for cid in ids], splits
 
 
 def run_experiment(
@@ -180,8 +183,8 @@ def _run_once(cfg, engine_cfg, clusters, splits, run_id, run_dir, rep, provenanc
                           expected_cluster_ids=[c.cluster_id for c in clusters])
         write_timing(timing, run_dir / "timing.csv")
         manifest["status"] = "complete"
-        exact = sum(r.exact_match for r in scored)
-        log(f"[{run_id}] complete: {exact}/{len(scored)} exact, "
+        dev = [r for r in scored if r.split == SPLIT_DEV]  # never show test accuracy
+        log(f"[{run_id}] complete: {sum(r.exact_match for r in dev)}/{len(dev)} dev exact, "
             f"{sum(r.status == 'failed' for r in scored)} failed")
     except BaseException as exc:  # includes Ctrl-C: the folder must say it is not valid
         manifest["status"] = "failed"

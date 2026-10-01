@@ -48,3 +48,25 @@ reconstruction harder for those clusters. We report this caveat and do not try t
 - The pilot (1,000 clusters) is drawn from **dev only**. τ is chosen on **dev only**.
   Test-split results may be cached, but no analysis that picks τ or any other setting may
   read them.
+
+## Synthetic grid (frozen 1 Oct 2026)
+
+- Definition: `configs/dataset_synthetic.yaml` (numbers) + `src/dnarecon/simulator.py`
+  (channel rules: event order, mutually exclusive deletion/substitution, uniform inserted
+  and substituted bases, one insertion slot after the last base, optional homopolymer
+  shortening applied first). Random 110-nt strands, **exact** coverage, no empty clusters.
+- 13 conditions: balanced p_ins = p_del = p_sub = e/3, e ∈ {3, 6, 9, 12}% × coverage
+  {5, 10, 20}, plus `e06_c10_hp50` (6%, coverage 10, every homopolymer run of ≥ 4 bases
+  loses one base with probability 0.5 per read: tests the Day 4 ITR-harm explanation).
+- 300 dev + 700 test clusters per condition, each (condition, split) drawn from its own
+  stream `default_rng([crc32("<cond>/<split>"), 20261002])`, so dev and test use
+  different seeds. Same rules as Microsoft: τ is chosen on dev only.
+- `scripts/make_synthetic.py configs/dataset_synthetic.yaml` writes
+  `data/synthetic/grid.jsonl` (not committed) and `data/splits/synthetic_grid_split.csv`
+  (committed); `--check` confirms both reproduce byte for byte.
+- Checks: `tests/unit/test_simulator.py` (each rate within ~5 SE of the configured
+  value, uniform bases; gate G6.7); the script prints reads per cluster (G6.3) and the
+  observed read error as edit distance / 110 (G6.2): 2.9 / 5.8 / 8.6 / 11.2% for the
+  3 / 6 / 9 / 12% conditions. That is slightly below the configured rate because the edit
+  distance counts a cheaper explanation when nearby errors cancel. BBS and ITR both process
+  every condition (G6.4, smoke run of 3 dev clusters per condition, 1 Oct).

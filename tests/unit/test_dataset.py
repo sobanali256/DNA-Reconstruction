@@ -111,7 +111,8 @@ def test_empty_clusters_stay_eligible_but_skip_engines():
 
 def test_jsonl_round_trip_and_validation(tmp_path):
     from dnarecon.dataset import load_records_jsonl, save_records_jsonl
-    records = [ClusterRecord("a", ("ACGT", "ACG"), 4, "t", "ACGT"), ClusterRecord("b", (), 4, "t", "CCCC")]
+    records = [ClusterRecord("a", ("ACGT", "ACG"), 4, "t", "ACGT", error_profile={"p_sub": 0.01}),
+               ClusterRecord("b", (), 4, "t", "CCCC")]
     path = tmp_path / "r.jsonl"
     save_records_jsonl(records, path)
     assert load_records_jsonl(path) == records

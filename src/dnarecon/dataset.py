@@ -91,6 +91,14 @@ def load_microsoft(
     return records
 
 
+def load_dataset(ds: dict, root: Path) -> list[ClusterRecord]:
+    """A dataset config's records: normalized JSONL if it names `records_path`, else Microsoft CNR."""
+    if "records_path" in ds:
+        return load_records_jsonl(root / ds["records_path"])
+    return load_microsoft(root / ds["clusters_path"], root / ds["centers_path"],
+                          ds["expected_length"], ds["dataset_id"])
+
+
 def assign_split(cluster_ids: list[str], dev_fraction: float, seed: int) -> dict[str, str]:
     """Randomly assign each cluster to dev or test with a fixed seed.
 
@@ -165,6 +173,7 @@ def save_records_jsonl(records: list[ClusterRecord], path: str | Path) -> None:
                 "expected_length": r.expected_length,
                 "reads": list(r.reads),
                 "original_sequence": r.original_sequence,
+                "error_profile": r.error_profile,
             }) + "\n")
 
 
@@ -182,6 +191,7 @@ def load_records_jsonl(path: str | Path) -> list[ClusterRecord]:
                 expected_length=int(d["expected_length"]),
                 dataset_id=d["dataset_id"],
                 original_sequence=d.get("original_sequence"),
+                error_profile=d.get("error_profile"),
             )
             problems.extend(f"{record.cluster_id}: {p}" for p in validate_cluster(record))
             records.append(record)

@@ -1,0 +1,21 @@
+# Synthetic grid: IDS-channel clusters (channel spec: src/dnarecon/simulator.py docstring).
+#   .venv/bin/python scripts/make_synthetic.py configs/dataset_synthetic.yaml [--check]
+# The numbers below are the reproducible definition of every condition. Changing anything
+# here changes the data: regenerate, and mark results made with the old data invalid.
+# Each (condition, split) has its own random stream: default_rng([crc32("<cond>/<split>"), seed]),
+# so dev and test are drawn with different seeds and conditions do not affect each other.
+dataset_id: synthetic_grid
+records_path: data/synthetic/grid.jsonl          # gitignored; regenerate with the script
+expected_length: 110                              # strand length (same as Microsoft CNR)
+seed: 20261002
+n_dev: 300                                        # clusters per condition, dev split
+n_test: 700                                       # clusters per condition, test split
+split:
+  output_path: data/splits/synthetic_grid_split.csv   # committed
+
+# Balanced errors: p_ins = p_del = p_sub = total / 3. hp_shorten: probability that a run
+# of >= 4 equal bases loses one base (per run and read), applied before the IDS channel.
+total_error_rates: [0.03, 0.06, 0.09, 0.12]
+coverages: [5, 10, 20]
+extra_conditions:     # Day 4 hypothesis: ITR follows reads that shorten long homopolymers
+  - {name: e06_c10_hp50, total_error_rate: 0.06, coverage: 10, hp_shorten: 0.5}

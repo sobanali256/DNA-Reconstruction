@@ -1,0 +1,13 @@
+# Full cache, BBS-only baseline on the dev split of the Microsoft CNR. One repetition: the
+# canonical run (BBS run-to-run variability was measured on the pilot).
+experiment_name: microsoft_dev_bbs
+dataset: configs/dataset_microsoft.yaml
+clusters: data/splits/microsoft_cnr_split.csv
+split: dev          # only the dev clusters of the list
+method: bbs_only
+bbs:
+  config: configs/bbs.yaml
+  threads: 4       # physical cores; thread count changes speed only, not results
+  shards: 1
+repetitions: 1
+output_root: results/
