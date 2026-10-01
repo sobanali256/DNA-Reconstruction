@@ -147,9 +147,27 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
   no rescue = too few reads (median 7). Hypothesis for the synthetic grid: ITR harms less
   with independent IDS errors; consider one homopolymer-bias condition.
   Code review fix `cb06597`. Day 4 commits: `bad480b`, `55c2711`, `78f056c`, `cb06597`.
-  **Next (plan first):** Days 5–7: full Microsoft cache (BBS + ITR on all 10,000), rerun the
-  Day 4 analyses on the full dev split, start the IDS simulator, decide on a
-  homopolymer-bias synthetic condition.
+- 1 Oct 2026 (evening), Days 5–7 in progress (`248704c`, review fix `21fee11`):
+  IDS simulator `src/dnarecon/simulator.py` (balanced p_ins = p_del = p_sub, del/sub
+  mutually exclusive, optional homopolymer shortening applied first; spec in its docstring
+  and `docs/data_policy.md`); `scripts/make_synthetic.py configs/dataset_synthetic.yaml
+  [--check]` → 13 conditions (3/6/9/12% × coverage 5/10/20 + `e06_c10_hp50`: runs ≥ 4 lose
+  one base with p 0.5), 300 dev + 700 test each, one JSONL (`dataset_id` = condition).
+  Gates G6.2/6.3/6.4/6.7 pass. `dataset.load_dataset` (JSONL or Microsoft); runner key
+  `split: dev|test` (unknown/unsplit IDs are an error), log shows dev accuracy only,
+  manifest records `dataset_files_sha256`. Run configs `configs/{microsoft,synthetic}_
+  {dev,test}_{bbs,itr}.yaml`. Dev caches complete: `microsoft_dev_bbs-20261001-213122-r1`
+  (96.0%), `microsoft_dev_itr-20261001-213129-r1` (87.8%; identical to the pilot on shared
+  clusters), `synthetic_dev_bbs-20261001-223625-r1` (75.8% pooled),
+  `synthetic_dev_itr-20261001-223644-r1` (88.7% pooled: ITR beats BBS on independent
+  errors). `microsoft_test_bbs-20261001-232933-r1` complete;
+  `microsoft_test_itr-20261001-232952-r1` stopped by the user → failed, do not use.
+  ITR slowed ~2× mid-evening (Windows side): cache ITR times are mixed-speed, never report
+  them as timing results.
+  **Next:** rerun `microsoft_test_itr`, `synthetic_test_bbs`, `synthetic_test_itr`; Day 7:
+  fill run IDs in `configs/microsoft_dev_cascade.yaml`, run `cascade_from_cache.py` +
+  `itr_failure_modes.py`, add a full-dev section to `docs/pilot_notes.md`. Then plan Week 2
+  (per-condition synthetic analysis by `dataset_id`, global τ on dev, router, scheduler).
 - Sanity targets **verified** in the BBS paper (iScience 2025, Table 2, "Srinivasavaradhan
   et al." = Microsoft CNR, all 10,000 clusters, default parameters, beam 20): success rate
   (exact match) BBS 94.77%, ITR 87.58%, CPL 94.93%; ITR took 7,352 s (~0.74 s/cluster, i9-13900H).
