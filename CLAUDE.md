@@ -146,7 +146,10 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
   shorten long runs, ITR follows the majority; 93% of harmed outputs have the wrong length);
   no rescue = too few reads (median 7). Hypothesis for the synthetic grid: ITR harms less
   with independent IDS errors; consider one homopolymer-bias condition.
-  **Next:** Days 5–7: full Microsoft cache (BBS + ITR on all 10,000) + start IDS simulator.
+  Code review fix `cb06597`. Day 4 commits: `bad480b`, `55c2711`, `78f056c`, `cb06597`.
+  **Next (plan first):** Days 5–7: full Microsoft cache (BBS + ITR on all 10,000), rerun the
+  Day 4 analyses on the full dev split, start the IDS simulator, decide on a
+  homopolymer-bias synthetic condition.
 - Sanity targets **verified** in the BBS paper (iScience 2025, Table 2, "Srinivasavaradhan
   et al." = Microsoft CNR, all 10,000 clusters, default parameters, beam 20): success rate
   (exact match) BBS 94.77%, ITR 87.58%, CPL 94.93%; ITR took 7,352 s (~0.74 s/cluster, i9-13900H).
