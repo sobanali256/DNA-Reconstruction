@@ -97,3 +97,11 @@ def test_pilot_pipeline_on_fixture(tmp_path):
     assert result.returncode == 0, result.stderr
     header, *rows = (tmp_path / "fb_tau_sweep.csv").read_text().splitlines()
     assert header.endswith("fallback_seconds") and all(r.endswith(",") for r in rows)  # nan = blank
+
+    # ITR failure-mode analysis (needs the raw Microsoft files for truth and reads).
+    if (ROOT / "data/raw/microsoft_cnr/Clusters.txt").exists():
+        result = subprocess.run([sys.executable, str(ROOT / "analysis/itr_failure_modes.py"),
+                                 str(tmp_path / "cascade.yaml")], capture_output=True, text=True)
+        assert result.returncode == 0, result.stderr
+        modes = {tuple(r.split(",")[:2]) for r in (tmp_path / "fx_itr_failure_modes.csv").read_text().splitlines()}
+        assert ("both_right", "n_clusters") in modes and ("reads_harmed", "n_clusters") in modes

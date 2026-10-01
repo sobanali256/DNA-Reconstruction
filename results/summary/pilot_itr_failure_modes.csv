@@ -1,0 +1,50 @@
+section,metric,value,note
+background,share_truth_positions_in_long_runs,0.0466,runs >= 4 equal bases
+both_right,n_clusters,881,
+both_right,coverage_median,22.0,
+both_right,itr_edit_distance_median,0.0,
+both_right,itr_length_wrong_share,0.0,label-free: length != designed
+both_right,itr_one_base_short,0,
+both_right,itr_errors_substitution,0,
+both_right,itr_errors_deletion,0,
+both_right,itr_errors_insertion,0,
+both_right,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+both_wrong,n_clusters,27,
+both_wrong,coverage_median,7.0,
+both_wrong,itr_edit_distance_median,2.0,
+both_wrong,itr_length_wrong_share,0.7407,label-free: length != designed
+both_wrong,itr_one_base_short,11,
+both_wrong,itr_errors_substitution,18,
+both_wrong,itr_errors_deletion,39,
+both_wrong,itr_errors_insertion,29,
+both_wrong,itr_errors_in_long_runs_share,0.3605,truth homopolymer >= 4
+harmed,n_clusters,86,
+harmed,coverage_median,19.0,
+harmed,itr_edit_distance_median,1.0,
+harmed,itr_length_wrong_share,0.9302,label-free: length != designed
+harmed,itr_one_base_short,73,
+harmed,itr_errors_substitution,6,
+harmed,itr_errors_deletion,81,
+harmed,itr_errors_insertion,16,
+harmed,itr_errors_in_long_runs_share,0.7767,truth homopolymer >= 4
+rescued,n_clusters,4,
+rescued,coverage_median,9.0,
+rescued,itr_edit_distance_median,0.0,
+rescued,itr_length_wrong_share,0.0,label-free: length != designed
+rescued,itr_one_base_short,0,
+rescued,itr_errors_substitution,0,
+rescued,itr_errors_deletion,0,
+rescued,itr_errors_insertion,0,
+rescued,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+reads_harmed,n_clusters,67,harmed: ITR's only error is one deletion in a long run
+reads_harmed,share_reads_run_shortened,0.7011,
+reads_harmed,share_reads_run_correct,0.2702,
+reads_harmed,share_reads_run_lengthened,0.0288,
+reads_harmed,share_clusters_majority_shortened,1.0,
+reads_both_right,n_clusters,611,first long run of the strand
+reads_both_right,share_reads_run_shortened,0.2517,
+reads_both_right,share_reads_run_correct,0.6995,
+reads_both_right,share_reads_run_lengthened,0.0488,
+reads_both_right,share_clusters_majority_shortened,0.0655,
+runs,bbs_run,pilot_bbs-20260930-191013-r1,
+runs,itr_run,pilot_itr-20260930-212355-r1,

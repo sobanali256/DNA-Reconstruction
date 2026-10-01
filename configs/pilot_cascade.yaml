@@ -4,6 +4,7 @@
 bbs_run: results/pilot_bbs-20260930-191013-r1   # canonical BBS run
 fallback_run: results/pilot_itr-20260930-212355-r1   # ITR-only (or a BBS-only run with other settings)
 split: dev
+dataset: configs/dataset_microsoft.yaml   # ground truth + reads, for itr_failure_modes.py only
 # Route to ITR iff BBS confidence < tau. 0 = BBS only, 1 = everything but confidence 1.
 # Grid from the dev confidence distribution (5th percentile of correct clusters: 0.88).
 taus: [0, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99, 1.0]

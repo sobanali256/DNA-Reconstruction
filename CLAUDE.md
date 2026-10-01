@@ -142,6 +142,10 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
   Pilot: ITR rescues 4/33 BBS failures (12%); AUROC confidence 0.91, path weight 0.89;
   the cascade never beats BBS alone (length check: +1 at best); beam-100 BBS rescues 0/33.
   **Decision: GO with ITR, framed around when the cascade helps** (`docs/pilot_notes.md`).
+  Why (`analysis/itr_failure_modes.py`): ITR harm = homopolymer under-calling (Nanopore reads
+  shorten long runs, ITR follows the majority; 93% of harmed outputs have the wrong length);
+  no rescue = too few reads (median 7). Hypothesis for the synthetic grid: ITR harms less
+  with independent IDS errors; consider one homopolymer-bias condition.
   **Next:** Days 5–7: full Microsoft cache (BBS + ITR on all 10,000) + start IDS simulator.
 - Sanity targets **verified** in the BBS paper (iScience 2025, Table 2, "Srinivasavaradhan
   et al." = Microsoft CNR, all 10,000 clusters, default parameters, beam 20): success rate

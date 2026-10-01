@@ -151,3 +151,73 @@ consistent with BBS's random tie-breaking (Day 2/3). A wider beam is not a usefu
   scheduler needs.
 - Not chosen: CPL (would need a new adapter; can be revisited if the synthetic grid also
   shows no rescue).
+
+## Day 4 follow-up (1 Oct 2026): why ITR breaks correct clusters and rarely rescues
+
+Exploratory, pilot only, same cached runs. Ground truth used for evaluation only:
+
+```bash
+.venv/bin/python analysis/itr_failure_modes.py configs/pilot_cascade.yaml
+```
+
+Table: `results/summary/pilot_itr_failure_modes.csv`. Clusters with reads (998) are
+grouped by exact match. ITR errors are located by aligning ITR's output to the true strand
+(edlib, global). A "long run" is a homopolymer of ≥ 4 equal bases; only **4.7%** of
+true-strand positions lie in one.
+
+| Group | n | Median reads | ITR wrong length | ITR one base short | ITR errors in long runs |
+|---|---|---|---|---|---|
+| BBS right, ITR right | 881 | 22 | 0% | 0 | – |
+| **BBS right, ITR wrong (harmed)** | 86 | 19 | **93%** | **73** | **78%** |
+| BBS wrong, ITR right (rescued) | 4 | 9 | 0% | 0 | – |
+| BBS wrong, ITR wrong | 27 | **7** | 74% | 11 | 36% |
+
+### Why ITR breaks clusters BBS gets right: homopolymer under-calling
+
+- In the harmed clusters ITR is almost always off by one base (median edit distance 1).
+  73 of 86 outputs are 109 bases instead of 110. The errors are mostly deletions (81 of
+  103), and 78% of them sit in long homopolymer runs, about 17× the background rate.
+- Reads at that run (67 harmed clusters where ITR's only error is one deletion in a long
+  run):
+
+  | Reads at the run | Harmed clusters (run where ITR drops a base) | Both right (first long run, 611 clusters) |
+  |---|---|---|
+  | Run shortened | **70%** | 25% |
+  | Run correct | 27% | 70% |
+  | Run lengthened | 3% | 5% |
+  | Clusters where most reads shorten the run | **100%** | 7% |
+
+- **Explanation:** Nanopore reads under-call long homopolymers. ITR assumes independent
+  insertion/deletion/substitution errors and effectively follows the majority of reads,
+  so when most reads drop a base in a run, so does ITR. BBS is given the designed length
+  (`-l 110`), and none of its outputs in these clusters has the wrong length. Coverage is
+  not the cause (median 19 reads), and neither is ITR's 25-read cap (it also happens at
+  10–14 reads).
+- **Consequence:** the harm is detectable without ground truth. 93% of harmed outputs
+  have the wrong length, which is why the length-consistency selector removes most of
+  the harm (Day 4 τ sweep).
+
+### Why ITR rarely rescues BBS failures: too few reads
+
+- The clusters both engines get wrong have a median of **7 reads** (vs 22 when both are
+  right). 5 of the 27 have only 1–2 reads (the 2 empty clusters are already excluded).
+  With so little information, neither engine can be expected to be exact.
+- ITR often gets closer than BBS (lower edit distance on 19 of the 33 BBS failures, Day 4)
+  but rarely exact: median edit distance 2, 74% with the wrong length. Its errors are
+  enriched in long runs too (36% vs 4.7% background), so the homopolymer bias adds to
+  the low coverage here.
+- The 4 rescues have lower coverage than usual (median 9) and no length errors.
+
+### What this means for the research
+
+1. The cascade's failure on Microsoft data has a specific, testable cause:
+   **sequencing-specific homopolymer bias, which violates ITR's independent-error
+   assumption.** It is not a general weakness of the cascade idea.
+2. **Hypothesis for the synthetic grid:** with independent, balanced IDS errors (the
+   planned grid has no homopolymer bias) ITR should harm far less and may rescue at
+   low coverage. Adding one synthetic condition with homopolymer-deletion bias would test
+   the explanation directly (to decide in the Days 5–7 plan).
+3. The length-consistency selector is the principled, label-free mitigation; report it
+   alongside the default selector. ITR's algorithm is not modified (CLAUDE.md).
+4. Limits: 1,000-cluster pilot only, 86 harmed / 27 both-wrong clusters; the read-level
+   check covers 67 of 86 harmed clusters. Re-run on the full dev split when it is cached.
