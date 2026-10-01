@@ -47,13 +47,14 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
 | ITR randomness | Upstream seeds `mt19937` from the clock but, with its default priorities (0), never draws from it: ITR is deterministic on file input. **Our wrapper still reseeds per cluster: `FNV-1a-64(cluster_id) XOR seed`** (seed in `configs/itr.yaml`), as a guarantee. No other change to the algorithm. Documented in `adapters/itr_native/PATCH.md`. |
 | Empty clusters | Stay in the denominator as failures; report the count separately. |
 | ITR timeout | Start at 60 s/cluster; adjust after the pilot. Timeout = ITR failure, so the cluster keeps its BBS result. |
-| Caching test split | Allowed (running both tools does not leak); analysis code must filter to dev when choosing τ. |
+| Caching test split | Allowed (running both tools does not leak); analysis code must filter to dev when choosing τ. Test caches are run now (user, 1 Oct); the runner never prints test accuracy. |
 | Parallel model | Controller threads/async subprocesses launching native processes (design doc v3), not Python multiprocessing. |
 | Static baseline | Include static partitioning (needed for static-vs-dynamic). |
-| Synthetic grid | 4 total error rates (3/6/9/12%) × coverage {5,10,20} = 12 conditions, balanced errors; the skewed compositions at one coverage only if time allows. |
+| Synthetic grid (frozen 1 Oct) | 4 total error rates (3/6/9/12%) × coverage {5,10,20} = 12 conditions, balanced errors, **+ `e06_c10_hp50`** (homopolymer runs ≥ 4 lose one base with p 0.5; tests the Day 4 ITR-harm explanation). 300 dev + 700 test clusters per condition, separate seeds (`configs/dataset_synthetic.yaml`). Skewed compositions at one coverage only if time allows. |
 | Length-consistency selector | Secondary variant, computed from the cache. |
 | Fallback engine (Day 4 go/no-go, 1 Oct) | **Keep ITR**; frame the paper around *when* the cascade helps. Pilot: ITR rescues 12% of BBS failures but harms more; beam-100 BBS rescues 0. CPL not pursued unless the synthetic grid also shows no rescue. |
 | BBS timing | Per batch/shard only; never invent per-cluster BBS runtimes. ITR timing per cluster. |
+| Cache-run ITR times | Not timing results (the laptop slowed ~2× mid-run on 1 Oct). Reported timings come only from the controlled scaling runs; cache times are used only as approximate cost. |
 | BBS nondeterminism | BBS breaks score ties by random HashMap order (~0.5% of clusters, all confidence ≤ 0.5, confidence itself stable). Cache **one** run as canonical; measure and report run-to-run variability from ~5 repeats. No patch to BBS. |
 
 ## Facts found in the upstream source code
