@@ -96,8 +96,11 @@ def read_rows(df: pd.DataFrame) -> list[dict]:
         shares = []
         for r in df[df.group == name].itertuples():
             if name == "harmed":  # the run holding ITR's single deleted base
-                m = re.fullmatch(r"(\d+)=1D\d*=?", edlib.align(r.itr_sequence, r.truth, mode="NW", task="path")["cigar"])
-                pos = int(m.group(1)) if m else None
+                if r.itr_failed:  # no ITR output (timeout, crash): nothing to locate
+                    continue
+                cigar = edlib.align(r.itr_sequence, r.truth, mode="NW", task="path")["cigar"]
+                m = re.fullmatch(r"(?:(\d+)=)?1D(?:\d+=)?", cigar)
+                pos = int(m.group(1) or 0) if m else None
             else:  # the first long run of the strand
                 pos = next((p for p in range(len(r.truth)) if np.diff(run_bounds(r.truth, p))[0] + 1 >= LONG_RUN), None)
             if pos is None:
