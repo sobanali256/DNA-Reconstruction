@@ -3,9 +3,12 @@
 import math
 import random
 
+import pandas as pd
 import pytest
 
 from dnarecon.metrics import (
+    cascade_outcome,
+    failure_auroc,
     edit_distance,
     exact_match,
     hamming_distance,
@@ -114,3 +117,50 @@ def test_summarize_all_failed_gives_nan_with_output_means():
 def test_summarize_rejects_empty_input():
     with pytest.raises(ValueError):
         summarize([])
+
+
+# Cached BBS + ITR outcomes, truth "ACGT" (expected length 4), worked out by hand:
+#   a  confident, both right          b  BBS wrong, ITR right (rescue)
+#   c  BBS right, ITR wrong (harm)    d  BBS wrong, ITR timed out (BBS kept)
+#   e  empty cluster (no confidence)  f  BBS wrong, ITR closer but too short
+CACHE = pd.DataFrame({
+    "bbs_confidence": [0.9, 0.3, 0.4, 0.2, None, 0.5],
+    "bbs_exact_match": [True, False, True, False, False, False],
+    "bbs_edit_distance": [0, 2, 0, 3, 4, 2],
+    "itr_failed": [False, False, False, True, None, False],
+    "itr_sequence": ["ACGT", "ACGT", "ACGA", None, None, "ACG"],
+    "itr_exact_match": [True, True, False, False, False, False],
+    "itr_edit_distance": [0, 0, 1, 4, 4, 1],
+    "itr_runtime_ms": [100.0, 200.0, 300.0, 400.0, None, 500.0],
+    "expected_length": [4] * 6,
+})
+
+
+def test_cascade_tau_zero_is_bbs_only():
+    out = cascade_outcome(CACHE, 0)
+    assert (out["n_routed"], out["n_exact"], out["rescued"], out["harmed"]) == (0, 2, 0, 0)
+    assert out["delta_exact_vs_bbs"] == 0 and math.isnan(out["routed_precision"])
+
+
+def test_cascade_middle_tau():
+    out = cascade_outcome(CACHE, 0.45)  # routes b, c, d
+    assert (out["n_routed"], out["n_exact"], out["rescued"], out["harmed"]) == (3, 2, 1, 1)
+    assert out["benefit_rate"] == 1 / 3 and out["harm_rate"] == 1 / 3  # d keeps BBS: unchanged
+    assert out["error_capture_rate"] == 2 / 4 and out["routed_precision"] == 2 / 3
+    assert out["itr_seconds"] == 0.9 and out["fallback_ratio"] == 0.5
+
+
+def test_cascade_tau_one_routes_all_but_empty():
+    out = cascade_outcome(CACHE, 1.0)
+    assert (out["n_routed"], out["n_exact"], out["rescued"], out["harmed"]) == (5, 2, 1, 1)
+    assert out["benefit_rate"] == 2 / 5 and out["harm_rate"] == 1 / 5
+    checked = cascade_outcome(CACHE, 1.0, length_check=True)  # f's short ITR output is rejected
+    assert checked["benefit_rate"] == 1 / 5 and checked["selector"] == "length_check"
+
+
+def test_failure_auroc_hand_checked():
+    # Positive scores {4, 2}, negative {3, 1}: 3 of 4 pairs ordered correctly.
+    is_wrong = [True, False, True, False] * 50
+    auc, low, high = failure_auroc(is_wrong, [4, 3, 2, 1] * 50, n_resamples=200, seed=1)
+    assert auc == 0.75 and low <= auc <= high
+    assert failure_auroc(is_wrong, [-4, -3, -2, -1] * 50, n_resamples=200, seed=1)[0] == 0.25

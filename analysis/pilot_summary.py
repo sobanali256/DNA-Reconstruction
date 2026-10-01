@@ -11,14 +11,13 @@ from __future__ import annotations
 
 import argparse
 import csv
-import json
 import statistics
 import sys
 from pathlib import Path
 
 from dnarecon.metrics import ClusterScore, summarize
 from dnarecon.models import ResultRecord
-from dnarecon.results import read_per_cluster, read_timing
+from dnarecon.results import read_run
 
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT = ROOT / "results/summary/pilot_summary.csv"
@@ -30,13 +29,6 @@ PAPER = {
     "itr": {"exact_rate": 0.8758, "mean_edit_distance": 0.232, "mean_hamming_distance": 4.797},
 }
 FULL_DATASET = 10_000
-
-
-def load_run(run_dir: Path) -> tuple[dict, list[ResultRecord], list]:
-    manifest = json.loads((run_dir / "manifest.json").read_text())
-    if manifest["status"] != "complete":
-        sys.exit(f"{run_dir}: run status is {manifest['status']}, not complete")
-    return manifest, read_per_cluster(run_dir / "per_cluster.csv"), read_timing(run_dir / "timing.csv")
 
 
 def quality_rows(section: str, records: list[ResultRecord]) -> list[dict]:
@@ -137,8 +129,8 @@ def main() -> None:
     args = parser.parse_args()
 
     # Sort by repetition number: the shell sorts r10 before r2.
-    bbs_runs = sorted((load_run(d) for d in args.bbs_runs), key=lambda run: run[0]["repetition"])
-    itr_run = load_run(args.itr)
+    bbs_runs = sorted((read_run(d) for d in args.bbs_runs), key=lambda run: run[0]["repetition"])
+    itr_run = read_run(args.itr)
     for manifest, _, _ in bbs_runs:
         if manifest["method"] != "bbs_only":
             sys.exit(f"{manifest['run_id']} is not a bbs_only run")

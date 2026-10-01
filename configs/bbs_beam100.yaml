@@ -1,0 +1,8 @@
+# BBS with a wider beam: the candidate fallback checked on Day 4 (go/no-go). Everything
+# except beam_width equals configs/bbs.yaml (upstream defaults). The thread count is not
+# here: every caller passes it explicitly.
+binary: external/bbs/target/release/bbs
+beam_width: 100    # -b  (5x the upstream default; Day 4 fallback check)
+k_min: 4           # -k
+k_max: 62          # -K
+alpha: 1           # -a

@@ -74,3 +74,26 @@ def test_pilot_pipeline_on_fixture(tmp_path):
     assert summary[("bbs", "n_empty_clusters")] == "1"
     assert summary[("bbs_time", "repetitions")] == "2"
     assert summary[("bbs_variability", "cluster_comparisons_skipped_shard_failed")] == "0"
+
+    # Day 4 cascade analysis on the same run folders.
+    cfg = {**yaml.safe_load((ROOT / "configs/pilot_cascade.yaml").read_text()),
+           "bbs_run": str(bbs_dirs[0]), "fallback_run": str(itr_dir), "output_prefix": str(tmp_path / "fx"),
+           "bootstrap": {"n_resamples": 50, "seed": 1}}
+    (tmp_path / "cascade.yaml").write_text(yaml.safe_dump(cfg))
+    result = subprocess.run([sys.executable, str(ROOT / "analysis/cascade_from_cache.py"),
+                             str(tmp_path / "cascade.yaml")], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    cascade = {r.split(",")[1]: r.split(",")[2] for r in (tmp_path / "fx_cascade.csv").read_text().splitlines()[1:]}
+    assert sum(int(cascade[f"bbs_{b}_fallback_{i}"]) for b in ("right", "wrong") for i in ("right", "wrong")) == 11
+    sweep = (tmp_path / "fx_tau_sweep.csv").read_text().splitlines()
+    n_exact_bbs = sum(r.exact_match for r in read_per_cluster(bbs_dirs[0] / "per_cluster.csv"))
+    assert sweep[1].split(",")[:6] == ["0.0000", "default", "11", "0", "0.0000", str(n_exact_bbs)]
+
+    # A BBS-only run can stand in as the fallback (e.g. a wider beam); it has no per-cluster time.
+    (tmp_path / "cascade_bbs.yaml").write_text(yaml.safe_dump({**cfg, "fallback_run": str(bbs_dirs[1]),
+                                                               "output_prefix": str(tmp_path / "fb")}))
+    result = subprocess.run([sys.executable, str(ROOT / "analysis/cascade_from_cache.py"),
+                             str(tmp_path / "cascade_bbs.yaml")], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    header, *rows = (tmp_path / "fb_tau_sweep.csv").read_text().splitlines()
+    assert header.endswith("fallback_seconds") and all(r.endswith(",") for r in rows)  # nan = blank

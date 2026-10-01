@@ -1,0 +1,13 @@
+# Day 4: 2x2 table, failure AUROC and tau sweep from the cached Day 3 pilot runs.
+#   .venv/bin/python analysis/cascade_from_cache.py configs/pilot_cascade.yaml
+# Paths are relative to the repository root. Dev clusters only: tau is chosen on dev.
+bbs_run: results/pilot_bbs-20260930-191013-r1   # canonical BBS run
+fallback_run: results/pilot_itr-20260930-212355-r1   # ITR-only (or a BBS-only run with other settings)
+split: dev
+# Route to ITR iff BBS confidence < tau. 0 = BBS only, 1 = everything but confidence 1.
+# Grid from the dev confidence distribution (5th percentile of correct clusters: 0.88).
+taus: [0, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99, 1.0]
+bootstrap:            # 95% CI of the AUROC
+  n_resamples: 2000
+  seed: 20261001
+output_prefix: results/summary/pilot   # writes <prefix>_cascade.csv and <prefix>_tau_sweep.csv

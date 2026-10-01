@@ -227,6 +227,15 @@ def write_per_cluster(records: Sequence[ResultRecord], path: str | Path,
     _write_rows(records, ResultRecord, Path(path))
 
 
+def read_run(run_dir: str | Path) -> tuple[dict, list[ResultRecord], list[TimingRecord]]:
+    """Manifest, per-cluster records and timing of one complete run folder."""
+    run_dir = Path(run_dir)
+    manifest = json.loads((run_dir / "manifest.json").read_text())
+    if manifest["status"] != "complete":
+        raise ValueError(f"{run_dir}: run status is {manifest['status']}, not complete")
+    return manifest, read_per_cluster(run_dir / "per_cluster.csv"), read_timing(run_dir / "timing.csv")
+
+
 def read_per_cluster(path: str | Path) -> list[ResultRecord]:
     records = _read_rows(ResultRecord, Path(path))
     # A blank cell cannot tell "" from None; the status columns can.
