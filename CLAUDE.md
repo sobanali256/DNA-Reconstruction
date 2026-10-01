@@ -52,6 +52,7 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
 | Static baseline | Include static partitioning (needed for static-vs-dynamic). |
 | Synthetic grid | 4 total error rates (3/6/9/12%) × coverage {5,10,20} = 12 conditions, balanced errors; the skewed compositions at one coverage only if time allows. |
 | Length-consistency selector | Secondary variant, computed from the cache. |
+| Fallback engine (Day 4 go/no-go, 1 Oct) | **Keep ITR**; frame the paper around *when* the cascade helps. Pilot: ITR rescues 12% of BBS failures but harms more; beam-100 BBS rescues 0. CPL not pursued unless the synthetic grid also shows no rescue. |
 | BBS timing | Per batch/shard only; never invent per-cluster BBS runtimes. ITR timing per cluster. |
 | BBS nondeterminism | BBS breaks score ties by random HashMap order (~0.5% of clusters, all confidence ≤ 0.5, confidence itself stable). Cache **one** run as canonical; measure and report run-to-run variability from ~5 repeats. No patch to BBS. |
 
@@ -135,7 +136,13 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
   (paper 94.77 / 87.58; ranking and gap reproduce); ITR 1.04 s/cluster (full set ≈ 2.9 h
   serial); BBS 3/1,000 clusters vary across 6 runs. Canonical cache runs:
   `pilot_bbs-20260930-191013-r1`, `pilot_itr-20260930-212355-r1`.
-  **Next:** Day 4: 2×2 table, AUROC, benefit/harm vs τ from the cache, go/no-go.
+- 1 Oct 2026, Day 4 done: `analysis/cascade_from_cache.py <config>` (2×2, rescuable share,
+  AUROC + bootstrap CI, τ sweep with default and length-consistency selectors; fallback =
+  ITR-only or BBS-only run); `metrics.cascade_outcome` / `failure_auroc`; `results.read_run`.
+  Pilot: ITR rescues 4/33 BBS failures (12%); AUROC confidence 0.91, path weight 0.89;
+  the cascade never beats BBS alone (length check: +1 at best); beam-100 BBS rescues 0/33.
+  **Decision: GO with ITR, framed around when the cascade helps** (`docs/pilot_notes.md`).
+  **Next:** Days 5–7: full Microsoft cache (BBS + ITR on all 10,000) + start IDS simulator.
 - Sanity targets **verified** in the BBS paper (iScience 2025, Table 2, "Srinivasavaradhan
   et al." = Microsoft CNR, all 10,000 clusters, default parameters, beam 20): success rate
   (exact match) BBS 94.77%, ITR 87.58%, CPL 94.93%; ITR took 7,352 s (~0.74 s/cluster, i9-13900H).

@@ -77,3 +77,77 @@ the speed-up were ideal (it will not be; the Week 3 scaling runs measure it).
 - Day 4: 2×2 table (does ITR fix the clusters BBS gets wrong?), confidence and
   path-weight AUROC, fallback benefit/harm at a range of τ computed from these cached
   runs, then go/no-go.
+
+## Day 4 (1 Oct 2026): does ITR fix what BBS gets wrong? Go/no-go
+
+Computed from the cached Day 3 runs only (no reruns, dev only), code `bad480b`:
+
+```bash
+.venv/bin/python analysis/cascade_from_cache.py configs/pilot_cascade.yaml          # ITR fallback
+.venv/bin/python scripts/run_experiment.py configs/pilot_bbs_beam100.yaml           # wider-beam check
+.venv/bin/python analysis/cascade_from_cache.py configs/pilot_cascade_beam100.yaml
+```
+
+Tables: `results/summary/pilot_cascade.csv`, `pilot_tau_sweep.csv`,
+`pilot_beam100_cascade.csv`, `pilot_beam100_tau_sweep.csv`.
+
+### 2×2 table (exact match, all 1,000 clusters)
+
+| | ITR right | ITR wrong |
+|---|---|---|
+| **BBS right** | 881 | 86 |
+| **BBS wrong** | **4 (rescuable)** | 29 (2 empty clusters) |
+
+- **Rescuable share: 4/33 = 12.1%** (Wilson 95% CI 4.8–27.3%), below the PLAN.md
+  guideline of about 15%, but not zero.
+- On the 33 BBS failures ITR gets closer to the truth more often than not (edit distance
+  lower in 19, equal in 10, higher in 4), but rarely exact.
+- Oracle (pick whichever engine is right, using the truth): 97.1% vs BBS 96.7%. That is
+  the most any selector could gain here: +0.4 points.
+
+### Does BBS confidence find its own failures? (998 clusters with output, 31 failures)
+
+| Score | AUROC | 95% CI (bootstrap BCa, 2,000) |
+|---|---|---|
+| Confidence | **0.907** | 0.787–0.958 |
+| Path weight | 0.889 | 0.804–0.940 |
+
+The BBS paper reports 0.85–0.87 on one dataset. The router signal works.
+
+### τ sweep (route to ITR iff confidence < τ)
+
+| τ | Routed | Exact | Rescued | Harmed | ITR time (s) |
+|---|---|---|---|---|---|
+| 0 (BBS only) | 0 | 96.7% | 0 | 0 | 0 |
+| 0.5 | 12 | 96.6% | 2 | 3 | 1 |
+| 0.8 | 58 | 95.1% | 2 | 18 | 29 |
+| 0.9 | 87 | 94.3% | 2 | 26 | 45 |
+| 0.99 | 310 | 90.7% | 4 | 64 | 251 |
+| 1.0 | 996 | 88.5% | 4 | 86 | 1,039 |
+
+With the default selection (ITR's answer replaces BBS's), **the cascade never beats BBS
+alone**: at every τ > 0 ITR breaks more correct BBS answers than it rescues. The
+label-free length-consistency selector (keep BBS when ITR's output length differs from
+the designed length) removes most of the harm. It ends level with BBS for most τ and
+is +1 cluster at best (τ = 0.5: 96.8%), which is within noise.
+
+### Wider-beam BBS as the fallback (beam 100 vs default 20)
+
+`pilot_bbs_beam100-20261001-193709-r1`: 966/1,000 exact. As a fallback it rescues
+**0/33** BBS failures (30 unchanged). The one cluster it changes from right to wrong is
+consistent with BBS's random tie-breaking (Day 2/3). A wider beam is not a useful fallback.
+
+### Decision (1 Oct 2026): GO with ITR, framed around *when* the cascade helps
+
+- Keep ITR as the fallback. Build the full Microsoft cache and the synthetic grid as
+  planned.
+- Report the Microsoft result honestly as a negative finding: confidence predicts BBS
+  failure well (AUROC 0.91), but ITR rescues only 12% of failures and harms more than
+  it rescues.
+- The synthetic grid (3–12% error, coverage 5/10/20) tests whether ITR helps at higher
+  error rates or lower coverage. Report the length-consistency selector alongside the
+  default.
+- The PDC study is unaffected: ITR's uneven per-cluster cost is the workload the
+  scheduler needs.
+- Not chosen: CPL (would need a new adapter; can be revisited if the synthetic grid also
+  shows no rescue).

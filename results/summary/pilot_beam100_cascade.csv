@@ -1,0 +1,26 @@
+section,metric,value,note
+two_by_two,bbs_right_fallback_right,966,
+two_by_two,bbs_right_fallback_wrong,1,
+two_by_two,bbs_wrong_fallback_right,0,
+two_by_two,bbs_wrong_fallback_wrong,33,
+two_by_two,n_empty_clusters,2,counted as wrong for both
+rescue,n_bbs_wrong,33,
+rescue,rescuable_share,0.0,fallback exact / BBS wrong; PLAN.md guideline >= 0.15
+rescue,rescuable_share_ci95_low,0.0,Wilson
+rescue,rescuable_share_ci95_high,0.1043,Wilson
+rescue,fallback_ed_better_on_bbs_wrong,1,
+rescue,fallback_ed_same_on_bbs_wrong,30,
+rescue,fallback_ed_worse_on_bbs_wrong,2,
+rescue,bbs_exact_rate,0.967,
+rescue,oracle_exact_rate,0.967,either engine exact: ceiling of any selector
+auroc,n_clusters,998,clusters with BBS output; empty clusters excluded
+auroc,n_bbs_wrong,31,
+auroc,confidence,0.9074,lower value = predicted failure
+auroc,confidence_ci95_low,0.7874,"bootstrap BCa, 2000 resamples"
+auroc,confidence_ci95_high,0.958,
+auroc,path_weight,0.8893,lower value = predicted failure
+auroc,path_weight_ci95_low,0.8035,"bootstrap BCa, 2000 resamples"
+auroc,path_weight_ci95_high,0.94,
+runs,bbs_run,pilot_bbs-20260930-191013-r1,
+runs,fallback_run,pilot_bbs_beam100-20261001-193709-r1,bbs_only
+runs,split,dev,
