@@ -91,6 +91,11 @@ def load_microsoft(
     return records
 
 
+def dataset_files(ds: dict) -> list[str]:
+    """The data files a dataset config points to (paths relative to the repository root)."""
+    return [ds["records_path"]] if "records_path" in ds else [ds["clusters_path"], ds["centers_path"]]
+
+
 def load_dataset(ds: dict, root: Path) -> list[ClusterRecord]:
     """A dataset config's records: normalized JSONL if it names `records_path`, else Microsoft CNR."""
     if "records_path" in ds:

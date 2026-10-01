@@ -1,5 +1,6 @@
 """Unit tests for the experiment runner, with stub engines that fail on purpose."""
 
+import hashlib
 import json
 import stat
 import sys
@@ -39,6 +40,10 @@ def stub(tmp_path, name, body):
 def root(tmp_path, monkeypatch):
     monkeypatch.setattr(runner.prov, "provenance", lambda: {"project_dirty": False})
     (tmp_path / "list.csv").write_text("cluster_id,n_reads\na,2\nb,1\ne,0\n")
+    save_records_jsonl(clusters(), tmp_path / "r.jsonl")
+    (tmp_path / "split.csv").write_text("cluster_id,split\na,dev\nb,test\ne,dev\n")
+    (tmp_path / "ds.yaml").write_text(yaml.safe_dump({"records_path": "r.jsonl",
+                                                      "split": {"output_path": "split.csv"}}))
     bbs = stub(tmp_path, "bbs", "sys.exit(1)")  # every BBS shard fails
     itr = stub(tmp_path, "itr", "sys.exit(2)")  # itr_cli's 'malformed input' exit code
     (tmp_path / "bbs.yaml").write_text(yaml.safe_dump(
@@ -49,7 +54,7 @@ def root(tmp_path, monkeypatch):
 
 
 def config(method="bbs_only", **extra):
-    cfg = {"experiment_name": "t", "dataset": "unused.yaml", "clusters": "list.csv",
+    cfg = {"experiment_name": "t", "dataset": "ds.yaml", "clusters": "list.csv",
            "method": method, "repetitions": 1, "output_root": "out"}
     if method == "bbs_only":
         cfg["bbs"] = {"config": "bbs.yaml", "threads": 1, "shards": 2}
@@ -164,12 +169,20 @@ def test_clusters_without_split_rejected(root):
 
 
 def test_split_key_keeps_only_that_split(root):
-    save_records_jsonl(clusters(), root / "r.jsonl")
-    (root / "split.csv").write_text("cluster_id,split\na,dev\nb,test\ne,dev\n")
-    (root / "ds.yaml").write_text(yaml.safe_dump({"records_path": "r.jsonl",
-                                                  "split": {"output_path": "split.csv"}}))
-    pick = lambda **k: [c.cluster_id for c in load_clusters(config(dataset="ds.yaml", **k), root)[0]]
+    pick = lambda **k: [c.cluster_id for c in load_clusters(config(**k), root)[0]]
     assert (pick(), pick(split="dev"), pick(split="test")) == (["a", "b", "e"], ["a", "e"], ["b"])
+
+
+def test_listed_cluster_without_split_is_an_error_not_dropped(root):
+    (root / "split.csv").write_text("cluster_id,split\na,dev\ne,dev\n")  # b lost its row
+    with pytest.raises(ValueError, match="not in the dataset or its split"):
+        load_clusters(config(split="dev"), root)
+
+
+def test_manifest_records_dataset_file_hash(root):
+    (run_dir,) = run_experiment(config(), clusters(), SPLITS, root=root, log=lambda m: None)
+    manifest = json.loads((run_dir / "manifest.json").read_text())
+    assert manifest["dataset_files_sha256"] == {"r.jsonl": hashlib.sha256((root / "r.jsonl").read_bytes()).hexdigest()}
 
 
 def test_log_never_shows_test_accuracy(root):

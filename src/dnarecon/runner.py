@@ -31,7 +31,7 @@ import yaml
 
 from dnarecon import provenance as prov
 from dnarecon.bbs_adapter import BbsRunError, BbsSettings, run_shard
-from dnarecon.dataset import SPLIT_DEV, load_dataset, read_cluster_list, read_split_table
+from dnarecon.dataset import SPLIT_DEV, dataset_files, load_dataset, read_cluster_list, read_split_table
 from dnarecon.itr_adapter import ItrRunError, ItrSettings, run_itr_batch
 from dnarecon.models import ClusterRecord
 from dnarecon.results import (
@@ -97,11 +97,11 @@ def load_clusters(cfg: dict, root: Path = ROOT) -> tuple[list[ClusterRecord], di
     by_id = {r.cluster_id: r for r in load_dataset(ds, root)}
     splits = read_split_table(root / ds["split"]["output_path"])
     ids = read_cluster_list(root / cfg["clusters"])
+    unknown = [cid for cid in ids if cid not in by_id or cid not in splits]
+    if unknown:  # checked before the split filter, so no listed cluster can vanish silently
+        raise ValueError(f"{len(unknown)} cluster IDs not in the dataset or its split, e.g. {unknown[:3]}")
     if "split" in cfg:  # optional: run only the dev or the test clusters of the list
-        ids = [cid for cid in ids if splits.get(cid) == cfg["split"]]
-    unknown = [cid for cid in ids if cid not in by_id]
-    if unknown:
-        raise ValueError(f"{len(unknown)} unknown cluster IDs, e.g. {unknown[:3]}")
+        ids = [cid for cid in ids if splits[cid] == cfg["split"]]
     if not ids:
         raise ValueError("empty cluster list")
     return [by_id[cid] for cid in ids], splits
@@ -158,7 +158,10 @@ def _run_once(cfg, engine_cfg, clusters, splits, run_id, run_dir, rep, provenanc
         "command": command,
         "config": cfg,
         "engine_config": engine_cfg,
-        "clusters_file_sha256": hashlib.sha256((root / cfg["clusters"]).read_bytes()).hexdigest(),
+        "clusters_file_sha256": _sha256(root / cfg["clusters"]),
+        # the reads and ground truth actually used (synthetic data is gitignored)
+        "dataset_files_sha256": {p: _sha256(root / p) for p in
+                                 dataset_files(yaml.safe_load((root / cfg["dataset"]).read_text()))},
         "n_clusters": len(clusters),
         "n_empty_clusters": sum(c.is_empty for c in clusters),
         "provenance": provenance,
@@ -296,6 +299,10 @@ def _chunks(items: list, n_parts: int) -> list[list]:
         out.append(items[i:i + step])
         i += step
     return out
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def _now() -> str:
