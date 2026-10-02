@@ -12,7 +12,9 @@ GIL is not held while a native ITR process runs. Modes (decided 2 Oct 2026):
 A worker's tasks run one at a time, so at most `workers` native tasks run at once; the
 measured peak is returned so every run can show it (gate G5.6). An exception listed in
 `catch` is recorded in that task's outcome and the other tasks continue (G5.5); any other
-exception stops the workers taking new tasks and is re-raised.
+exception stops the workers taking new tasks and is re-raised; so does an exception in the
+controller thread (Ctrl-C). `stop` lets the task function see that too (e.g. to skip
+relaunching a native process).
 """
 
 from __future__ import annotations
@@ -58,18 +60,27 @@ class ScheduleInfo:
     busy_ms: dict[int, float] = field(default_factory=dict)  # per worker: sum of task wall times
 
 
+def contiguous_blocks(items: Sequence, n_parts: int) -> list[list]:
+    """Split into at most n_parts contiguous, near-equal, non-empty blocks (earlier blocks larger)."""
+    n_parts = min(n_parts, len(items))
+    if n_parts == 0:
+        return []
+    base, extra = divmod(len(items), n_parts)
+    out, i = [], 0
+    for k in range(n_parts):
+        step = base + (k < extra)
+        out.append(list(items[i:i + step]))
+        i += step
+    return out
+
+
 def partition(tasks: Sequence[Task], workers: int, mode: str, seed: int) -> list[list[Task]]:
     """The fixed per-worker task lists of a static mode (each worker runs its list in order)."""
     if mode == "static":
         order = list(tasks)
         random.Random(seed).shuffle(order)
-        base, extra = divmod(len(order), workers)
-        out, i = [], 0
-        for w in range(workers):
-            step = base + (w < extra)
-            out.append(order[i:i + step])
-            i += step
-        return out
+        blocks = contiguous_blocks(order, workers)
+        return blocks + [[] for _ in range(workers - len(blocks))]  # more workers than tasks
     if mode == "static_lpt":
         out = [[] for _ in range(workers)]
         heap = [(0.0, w) for w in range(workers)]  # (load, worker): ties go to the lower worker
@@ -90,6 +101,7 @@ def run_tasks(
     seed: int = 0,
     catch: tuple[type[BaseException], ...] = (),
     on_done: Callable[[TaskOutcome], None] | None = None,
+    stop: threading.Event | None = None,
 ) -> tuple[list[TaskOutcome], ScheduleInfo]:
     """Run fn(task) for every task; outcomes come back in task order, with scheduling facts."""
     if mode not in MODES:
@@ -100,7 +112,7 @@ def run_tasks(
         raise ValueError("duplicate task IDs")
 
     lock = threading.Lock()
-    stop = threading.Event()
+    stop = stop if stop is not None else threading.Event()
     active = 0
     outcomes: dict[str, TaskOutcome] = {}
     info = ScheduleInfo(mode, workers, len(tasks), None)
@@ -128,8 +140,12 @@ def run_tasks(
                 on_done(out)
 
     if mode == "serial":
-        for task in tasks:
-            execute(task, 0)
+        try:
+            for task in tasks:
+                execute(task, 0)
+        except BaseException:
+            stop.set()
+            raise
     else:
         if mode == "dynamic":
             shared: queue.Queue[Task] = queue.Queue()

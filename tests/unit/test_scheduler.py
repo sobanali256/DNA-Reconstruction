@@ -116,3 +116,17 @@ def test_on_done_called_once_per_task():
     run_tasks(tasks(6), sleepy, mode="dynamic", workers=3, on_done=done.append)
     assert sorted(o.task_id for o in done) == sorted(f"t{i}" for i in range(6))
     assert set(MODES) == {"serial", "static", "static_lpt", "dynamic"}
+
+
+@pytest.mark.parametrize("mode,workers", [("serial", 1), ("dynamic", 2)])
+def test_abort_sets_the_shared_stop_event(mode, workers):
+    stop = threading.Event()
+
+    def fn(task):
+        if task.task_id == "t1":
+            raise RuntimeError("abort")
+        return sleepy(task)
+
+    with pytest.raises(RuntimeError):
+        run_tasks(tasks(6), fn, mode=mode, workers=workers, stop=stop)
+    assert stop.is_set()

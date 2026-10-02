@@ -29,6 +29,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -52,7 +53,7 @@ from dnarecon.results import (
     write_timing,
 )
 from dnarecon.router import route
-from dnarecon.scheduler import MODES, Task, run_tasks
+from dnarecon.scheduler import MODES, Task, contiguous_blocks, run_tasks
 
 ROOT = prov.ROOT
 RUNNABLE_METHODS = ("bbs_only", "itr_only", "adaptive")
@@ -68,7 +69,11 @@ class DirtyTreeError(RuntimeError):
 
 def load_config(path: str | Path) -> dict:
     """Read and validate an experiment config."""
-    cfg = yaml.safe_load(Path(path).read_text())
+    return validate_config(yaml.safe_load(Path(path).read_text()), path)
+
+
+def validate_config(cfg: dict, path: str | Path = "config") -> dict:
+    """Check an experiment config (`path` only labels the error messages); return it."""
     for key in ("experiment_name", "dataset", "clusters", "method", "repetitions", "output_root"):
         if key not in cfg:
             raise ValueError(f"{path}: missing '{key}'")
@@ -300,7 +305,7 @@ def _bbs_stage(cfg, settings, clusters, run_id, run_dir, log):
     raw = run_dir / "raw"
     results, shard_of, failed, timing = {}, {}, set(), []
     stage_start, stage_epoch = time.perf_counter(), time.time()
-    for i, chunk in enumerate(_chunks(non_empty, n_parts=int(cfg["bbs"]["shards"]))):
+    for i, chunk in enumerate(contiguous_blocks(non_empty, int(cfg["bbs"]["shards"]))):
         shard_id = f"s{i}"
         for c in chunk:
             shard_of[c.cluster_id] = shard_id
@@ -339,8 +344,10 @@ def _itr_stage(cfg, settings, to_run, run_id, run_dir, log):
     stage_start, stage_epoch = time.perf_counter(), time.time()
     done = 0
 
+    stop = threading.Event()  # set by the scheduler on abort: no new ITR launches
+
     def run_task(task):
-        return run_itr_batch(list(task.items), settings, workdir=raw, task_id=task.task_id)
+        return run_itr_batch(list(task.items), settings, workdir=raw, task_id=task.task_id, cancel=stop)
 
     def progress(outcome):  # called under the scheduler's lock
         nonlocal done
@@ -354,7 +361,7 @@ def _itr_stage(cfg, settings, to_run, run_id, run_dir, log):
         log(f"[{run_id}] ITR {done}/{len(to_run)} clusters, {time.perf_counter() - stage_start:.0f} s")
 
     outcomes, info = run_tasks(tasks, run_task, mode=mode, workers=workers, seed=seed,
-                               catch=(ItrRunError,), on_done=progress)
+                               catch=(ItrRunError,), on_done=progress, stop=stop)
     results, task_of, worker_of, failed, timing = {}, {}, {}, set(), []
     for task, out in zip(tasks, outcomes):
         for c in task.items:
@@ -379,20 +386,6 @@ def _itr_stage(cfg, settings, to_run, run_id, run_dir, log):
 def _stage(run_id, stage_id, n, threads, started_at, start, status) -> TimingRecord:
     return TimingRecord(run_id, "stage", stage_id, None, n, threads, started_at, time.time(),
                         (time.perf_counter() - start) * 1000, None, status)
-
-
-def _chunks(items: list, n_parts: int) -> list[list]:
-    """Split into at most n_parts contiguous, near-equal, non-empty chunks."""
-    n_parts = min(n_parts, len(items))
-    if n_parts == 0:
-        return []
-    base, extra = divmod(len(items), n_parts)
-    out, i = [], 0
-    for k in range(n_parts):
-        step = base + (k < extra)
-        out.append(items[i:i + step])
-        i += step
-    return out
 
 
 def _sha256(path: Path) -> str:

@@ -9,6 +9,7 @@ overrides:                                    # replaces these top-level keys of
   split: dev
   clusters: data/splits/scaling_smoke.csv
 sample:                                       # for scripts/make_smoke_list.py
+  dataset: configs/dataset_synthetic.yaml
   split_file: data/splits/synthetic_grid_split.csv
   per_condition: 10
   seed: 20261002

@@ -2,14 +2,17 @@
 
     .venv/bin/python analysis/scaling_summary.py configs/scaling_smoke.yaml
 
-Finds the campaign's run folders by the `campaign` block in their manifests (measured,
-complete runs only; warm-ups and failed runs are listed but never used). Checks that every
-run had the same clusters and the same routed set (gate G8.3) and that every cell has all
-its repetitions (G8.1). Per run (from timing.csv and the manifest):
+Finds the campaign's run folders by the `campaign` block in their manifests and keeps one
+invocation of scripts/run_scaling.py (the latest, or --invocation), measured complete runs
+only; everything else is listed as not used. Stops unless every cell has all its
+repetitions (G8.1; --allow-incomplete only to inspect a partial campaign) and every run
+used the same code, dataset files, cluster list, clusters and routed set (G8.3).
+Per run (from timing.csv and the manifest):
   * makespan       = the run row: wall time of the whole adaptive run (BBS + route + ITR);
   * bbs / itr      = the stage rows' wall times;
-  * utilization    = sum of ITR task wall times / (workers x ITR stage wall time);
-  * imbalance      = max / mean busy time over the cell's workers (idle workers count as 0).
+  * utilization    = sum of worker busy times / (workers x ITR stage wall time);
+  * imbalance      = max / mean busy time over the cell's workers (idle workers count as 0);
+  busy time = the scheduler's per-worker sum of ITR task wall times (manifest busy_ms).
 Per cell: median, IQR and min/max over repetitions; speedup S = median T1 / median Tp, with
 T1 = the serial cell (1 worker), for the whole run and for the ITR stage; efficiency = S / p.
 Cells with more workers than physical cores are flagged hyper-threaded; never pool them.
@@ -27,21 +30,33 @@ import pandas as pd
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "scripts"))
+from run_scaling import campaign_base  # noqa: E402
+
 T1_CELL = "serial_p1"
+SAME_WORKLOAD = ("project_commit", "clusters_file_sha256", "dataset_files_sha256", "n_clusters",
+                 "routed_ids_sha256")  # G8.3: T1 and Tp on the identical workload and code
 
 
-def campaign_runs(output_root: Path, name: str) -> tuple[list[dict], list[str]]:
-    """(manifests of measured complete runs, IDs of every other campaign folder)."""
-    used, skipped = [], []
+def campaign_runs(output_root: Path, name: str, invocation: str | None) -> tuple[list[dict], list[str], str]:
+    """(manifests of the chosen invocation's measured complete runs, other folders, invocation)."""
+    found = []
     for path in sorted(output_root.glob("*/manifest.json")):
         m = json.loads(path.read_text())
-        if (m.get("config", {}).get("campaign") or {}).get("name") != name:
-            continue
-        if m.get("status") == "complete" and m.get("measured", True) and m["config"]["campaign"].get("measured", True):
-            used.append({**m, "_dir": path.parent})
-        else:
-            skipped.append(f"{m['run_id']} ({m.get('status')}, measured={m.get('measured')})")
-    return used, skipped
+        camp = (m.get("config") or {}).get("campaign") or {}
+        if camp.get("name") == name:
+            found.append({**m, "_dir": path.parent, "_camp": camp})
+    invocations = sorted({m["_camp"].get("invocation") for m in found} - {None})
+    if invocation is None and invocations:
+        invocation = invocations[-1]  # the latest launch
+    used, skipped = [], []
+    for m in found:
+        ok = (m["_camp"].get("invocation") == invocation and m.get("status") == "complete"
+              and m.get("measured", True) and m["_camp"].get("measured", True))
+        (used.append(m) if ok else skipped.append(
+            f"{m['run_id']} (invocation {m['_camp'].get('invocation')}, {m.get('status')}, "
+            f"measured={m.get('measured')})"))
+    return used, skipped, invocation
 
 
 def run_row(m: dict) -> dict:
@@ -58,12 +73,14 @@ def run_row(m: dict) -> dict:
         "workers": p, "hyperthreaded": sched.get("hyperthreaded", False),
         "repetition": m["config"]["campaign"]["repetition"], "position": m["config"]["campaign"]["position"],
         "n_clusters": m["n_clusters"], "n_routed": m["n_routed"], "routed_ids_sha256": m["routed_ids_sha256"],
+        "project_commit": m["provenance"]["project_commit"], "clusters_file_sha256": m["clusters_file_sha256"],
+        "dataset_files_sha256": json.dumps(m["dataset_files_sha256"], sort_keys=True),
         "n_tasks": sched["n_tasks"], "microbatch_size": sched["microbatch_size"],
         "peak_concurrency": sched["peak_concurrency"],
         "makespan_s": timing.loc[timing.kind == "run", "wall_time_ms"].iloc[0] / 1000,
         "bbs_s": stage.get("bbs", 0) / 1000, "route_s": stage.get("route", 0) / 1000, "itr_s": itr_s,
-        "itr_task_sum_s": tasks.wall_time_ms.sum() / 1000,
-        "utilization": tasks.wall_time_ms.sum() / 1000 / (p * itr_s) if itr_s else None,
+        "busy_sum_s": sum(busy) / 1000,
+        "utilization": sum(busy) / 1000 / (p * itr_s) if itr_s else None,
         "imbalance": max(busy) / (sum(busy) / p) if sum(busy) else None,
         "itr_timeouts": int((per_cluster.itr_status == "timeout").sum()),
         "itr_failed_tasks": int((tasks.status == "failed").sum()),
@@ -97,22 +114,30 @@ def cell_rows(runs: pd.DataFrame) -> pd.DataFrame:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("config", type=Path)
-    camp = yaml.safe_load(parser.parse_args().config.read_text())
-    base = yaml.safe_load((ROOT / camp["base"]).read_text())
-    used, skipped = campaign_runs(ROOT / base["output_root"], camp["campaign"])
-    if not used:
-        sys.exit(f"no complete measured runs for campaign {camp['campaign']}")
+    parser.add_argument("--invocation", help="run_scaling.py launch to summarize (default: the latest)")
+    parser.add_argument("--allow-incomplete", action="store_true",
+                        help="inspect a partial campaign (cells without all repetitions); not for reporting")
+    args = parser.parse_args()
+    camp = yaml.safe_load(args.config.read_text())
+    base = campaign_base(camp)  # with overrides: the output_root the runs were written to
+    used, skipped, invocation = campaign_runs(ROOT / base["output_root"], camp["campaign"], args.invocation)
     for s in skipped:
         print(f"not used: {s}")
+    if not used:
+        sys.exit(f"no complete measured runs for campaign {camp['campaign']} invocation {invocation}")
     runs = pd.DataFrame([run_row(m) for m in used]).sort_values(["repetition", "position"])
-    for key in ("n_clusters", "routed_ids_sha256"):  # G8.3: T1 and Tp on the identical workload
+    for key in SAME_WORKLOAD:
         if runs[key].nunique() != 1:
-            sys.exit(f"runs differ in {key}: not one workload")
+            sys.exit(f"runs differ in {key}: not one workload (G8.3)")
     expected = {f"{c['scheduler']}_p{w}" for c in camp["cells"] for w in c["workers"]}
     counts = runs.cell.value_counts()
-    incomplete = {c: int(counts.get(c, 0)) for c in expected if counts.get(c, 0) != camp["repetitions"]}
-    if incomplete:  # G8.1: report, never silently average an incomplete cell
-        print(f"WARNING: cells without {camp['repetitions']} repetitions: {incomplete}")
+    incomplete = {c: int(counts.get(c, 0)) for c in expected | set(counts.index)
+                  if counts.get(c, 0) != camp["repetitions"]}
+    if incomplete:  # G8.1: never average an incomplete campaign into reported numbers
+        msg = f"cells without exactly {camp['repetitions']} repetitions: {incomplete}"
+        if not args.allow_incomplete:
+            sys.exit(f"{msg} (G8.1); rerun the campaign or pass --allow-incomplete to inspect")
+        print(f"WARNING: {msg}")
     cells = cell_rows(runs)
     prefix = ROOT / camp["output_prefix"]
     prefix.parent.mkdir(parents=True, exist_ok=True)
@@ -123,7 +148,7 @@ def main() -> None:
             "itr_s_median", "bbs_s_median", "speedup", "efficiency", "itr_speedup", "utilization_median",
             "imbalance_median", "peak_concurrency_max", "itr_timeouts"]
     print(cells[[c for c in show if c in cells]].to_string(index=False, float_format=lambda v: f"{v:.3f}"))
-    print(f"\n{runs.n_routed.iloc[0]} of {runs.n_clusters.iloc[0]} clusters routed to ITR in every run. "
+    print(f"\nInvocation {invocation}: {runs.n_routed.iloc[0]} of {runs.n_clusters.iloc[0]} clusters routed to ITR in every run. "
           f"Wrote {prefix.name}_runs.csv and {prefix.name}_cells.csv")
 
 

@@ -15,7 +15,8 @@ from dnarecon.itr_adapter import ItrBatchResult, ItrClusterResult, ItrRunError
 from dnarecon.models import ClusterRecord
 from dnarecon.results import read_per_cluster, read_timing
 from dnarecon.dataset import save_records_jsonl
-from dnarecon.runner import DirtyTreeError, _chunks, load_clusters, load_config, run_experiment
+from dnarecon.runner import DirtyTreeError, load_clusters, load_config, run_experiment
+from dnarecon.scheduler import contiguous_blocks
 
 TRUTH = "ACGT"
 
@@ -197,10 +198,10 @@ def test_log_never_shows_test_accuracy(root):
     assert "0/1 dev exact" in lines[-1]
 
 
-def test_chunks_are_contiguous_and_balanced():
-    assert _chunks(list(range(7)), 3) == [[0, 1, 2], [3, 4], [5, 6]]
-    assert _chunks([1, 2], 5) == [[1], [2]]
-    assert _chunks([], 2) == []
+def test_blocks_are_contiguous_and_balanced():
+    assert contiguous_blocks(list(range(7)), 3) == [[0, 1, 2], [3, 4], [5, 6]]
+    assert contiguous_blocks([1, 2], 5) == [[1], [2]]
+    assert contiguous_blocks([], 2) == []
 
 
 # --- adaptive runs (gates G3.4, G3.5), with fake engines -------------------------------
@@ -223,7 +224,7 @@ def fake_engines(monkeypatch):
         res = [BbsClusterResult(c.cluster_id, "ACGA", 4, 1.0, CONFIDENCE[c.cluster_id]) for c in chunk]
         return BbsShardResult(shard_id, res, 0.01, threads, ["bbs"], 0.0, 0.01)
 
-    def fake_itr(batch, settings, *, workdir, task_id, timeout_s_per_cluster=None):
+    def fake_itr(batch, settings, *, workdir, task_id, timeout_s_per_cluster=None, cancel=None):
         plan["seen"] += [c.cluster_id for c in batch]
         if any(c.cluster_id in plan["itr_task_fail"] for c in batch):
             raise ItrRunError("boom")

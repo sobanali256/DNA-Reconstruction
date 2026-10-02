@@ -219,8 +219,12 @@ def run_itr_batch(
     workdir: Path,
     task_id: str,
     timeout_s_per_cluster: float | None = None,
+    cancel: threading.Event | None = None,
 ) -> ItrBatchResult:
     """Reconstruct `records` with ITR; return exactly one result per record, in order.
+
+    `cancel` (set by the scheduler when the run is aborted, e.g. Ctrl-C) stops the batch
+    before the next wrapper launch: ItrRunError instead of relaunching for the rest.
 
     Empty clusters must be filtered out by the caller (docs/data_policy.md). Scratch
     files (input per launch, stderr log) go in `workdir` and are deleted when every
@@ -245,6 +249,8 @@ def run_itr_batch(
     with open(log_path, "w") as log:
         pending = list(records)
         while pending:
+            if cancel is not None and cancel.is_set():
+                raise ItrRunError(f"{task_id}: cancelled, {len(pending)} clusters not run")
             inputs.append(workdir / f"{task_id}.itr.input{len(inputs) + 1}.txt")
             got, command = _run_once(pending, settings, inputs[-1], log, timeout_s)
             first_command = first_command or command

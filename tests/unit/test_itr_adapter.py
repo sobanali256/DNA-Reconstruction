@@ -138,3 +138,14 @@ def test_slow_start_counts_as_first_cluster_timeout(fake, tmp_path):
 def test_parse_row_rejects_bad_rows(line):
     with pytest.raises(ItrRunError):
         parse_row(line, rec("a"))
+
+
+def test_cancel_stops_before_relaunching(fake, tmp_path):
+    """After a crash the adapter relaunches for the rest, unless the run was cancelled."""
+    import threading
+    cancel = threading.Event()
+    batch = run_itr_batch([rec("crash-1"), rec("a")], fake, workdir=tmp_path, task_id="t0", cancel=cancel)
+    assert statuses(batch) == [("crash-1", "crashed"), ("a", "ok")] and batch.launches == 2
+    cancel.set()
+    with pytest.raises(ItrRunError, match="cancelled"):
+        run_itr_batch([rec("a")], fake, workdir=tmp_path, task_id="t1", cancel=cancel)
