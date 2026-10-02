@@ -1,0 +1,14 @@
+# Week 3: Day 4 analyses (2x2, failure AUROC, tau sweep, ITR failure modes) on the Microsoft
+# TEST split, after tau was frozen (methodology-freeze). The tau sweep here is post hoc and
+# never used to choose tau. Analysis plan: docs/pilot_notes.md Day 10.
+#   .venv/bin/python analysis/cascade_from_cache.py configs/microsoft_test_cascade.yaml
+#   .venv/bin/python analysis/itr_failure_modes.py configs/microsoft_test_cascade.yaml
+bbs_run: results/microsoft_test_bbs-20261001-232933-r1   # canonical BBS run (microsoft_test_bbs)
+fallback_run: results/microsoft_test_itr-20261002-124047-r1   # ITR-only run (microsoft_test_itr)
+split: test
+dataset: configs/dataset_microsoft.yaml   # ground truth + reads, for itr_failure_modes.py only
+taus: [0, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99, 1.0]   # same grid as dev
+bootstrap:            # 95% CI of the AUROC
+  n_resamples: 2000
+  seed: 20261001
+output_prefix: results/summary/microsoft_test

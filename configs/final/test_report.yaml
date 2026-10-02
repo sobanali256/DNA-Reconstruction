@@ -1,0 +1,23 @@
+# Week 3: the headline test table and the live-vs-cache check (analysis plan: docs/pilot_notes.md Day 10).
+#   .venv/bin/python analysis/final_results.py configs/final/test_report.yaml
+# Adaptive test numbers come from the live final runs (τ and selector read from their manifests);
+# BBS-only and ITR-only baselines from the test caches. Dev columns = cache simulation at the same
+# frozen τ and selector, shown next to test to check that τ was not over-fitted to dev.
+families:
+  microsoft:
+    test: {bbs_run: results/microsoft_test_bbs-20261001-232933-r1,
+           itr_run: results/microsoft_test_itr-20261002-124047-r1}
+    dev:  {bbs_run: results/microsoft_dev_bbs-20261001-213122-r1,
+           itr_run: results/microsoft_dev_itr-20261001-213129-r1}
+    live:                 # method name -> final run (Microsoft τ 0: BBS only, no length-check policy)
+      adaptive: results/final_microsoft_test_adaptive-20261002-232255-r1
+  synthetic:
+    test: {bbs_run: results/synthetic_test_bbs-20261002-142420-r1,
+           itr_run: results/synthetic_test_itr-20261002-161609-r1}
+    dev:  {bbs_run: results/synthetic_dev_bbs-20261001-223625-r1,
+           itr_run: results/synthetic_dev_itr-20261001-223644-r1}
+    live:
+      adaptive: results/final_synthetic_test_adaptive-20261002-232315-r1
+      adaptive_lengthcheck: results/final_synthetic_test_adaptive_lengthcheck-20261002-232904-r1
+    group_by: dataset_id  # pooled "all" first, then one block per condition
+output_prefix: results/summary/final   # writes <prefix>_test_table.csv and <prefix>_live_vs_cache.csv

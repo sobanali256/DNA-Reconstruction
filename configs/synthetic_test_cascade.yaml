@@ -1,0 +1,15 @@
+# Week 3: Day 4 analyses (2x2, failure AUROC, tau sweep, ITR failure modes) per synthetic-grid
+# condition on the TEST split, after tau was frozen (methodology-freeze). The tau sweep here is
+# post hoc and never used to choose tau. Analysis plan: docs/pilot_notes.md Day 10.
+#   .venv/bin/python analysis/cascade_from_cache.py configs/synthetic_test_cascade.yaml
+#   .venv/bin/python analysis/itr_failure_modes.py configs/synthetic_test_cascade.yaml
+bbs_run: results/synthetic_test_bbs-20261002-142420-r1   # canonical BBS run (synthetic_test_bbs)
+fallback_run: results/synthetic_test_itr-20261002-161609-r1   # ITR-only run (synthetic_test_itr)
+split: test
+dataset: configs/dataset_synthetic.yaml   # ground truth + reads, for itr_failure_modes.py only
+group_by: dataset_id   # one block per condition, after the pooled group "all"
+taus: [0, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99, 1.0]   # same grid as dev
+bootstrap:            # 95% CI of the AUROC
+  n_resamples: 2000
+  seed: 20261001
+output_prefix: results/summary/synthetic_test
