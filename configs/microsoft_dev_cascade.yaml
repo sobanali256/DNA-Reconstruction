@@ -1,8 +1,8 @@
 # Days 5-7: Day 4 analyses (2x2, failure AUROC, tau sweep) on the full Microsoft dev split.
 #   .venv/bin/python analysis/cascade_from_cache.py configs/microsoft_dev_cascade.yaml
 # Paths are relative to the repository root. Dev clusters only: tau is chosen on dev.
-bbs_run: results/TBD   # canonical BBS run (microsoft_dev_bbs)
-fallback_run: results/TBD   # ITR-only run (microsoft_dev_itr)
+bbs_run: results/microsoft_dev_bbs-20261001-213122-r1   # canonical BBS run (microsoft_dev_bbs)
+fallback_run: results/microsoft_dev_itr-20261001-213129-r1   # ITR-only run (microsoft_dev_itr)
 split: dev
 dataset: configs/dataset_microsoft.yaml   # ground truth + reads, for itr_failure_modes.py only
 # Route to ITR iff BBS confidence < tau. 0 = BBS only, 1 = everything but confidence 1.

@@ -148,7 +148,7 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
   no rescue = too few reads (median 7). Hypothesis for the synthetic grid: ITR harms less
   with independent IDS errors; consider one homopolymer-bias condition.
   Code review fix `cb06597`. Day 4 commits: `bad480b`, `55c2711`, `78f056c`, `cb06597`.
-- 1 Oct 2026 (evening), Days 5–7 in progress (`248704c`, review fix `21fee11`):
+- 1 Oct 2026 (evening), Days 5–7 (`248704c`, review fix `21fee11`):
   IDS simulator `src/dnarecon/simulator.py` (balanced p_ins = p_del = p_sub, del/sub
   mutually exclusive, optional homopolymer shortening applied first; spec in its docstring
   and `docs/data_policy.md`); `scripts/make_synthetic.py configs/dataset_synthetic.yaml
@@ -165,10 +165,20 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
   `microsoft_test_itr-20261001-232952-r1` stopped by the user → failed, do not use.
   ITR slowed ~2× mid-evening (Windows side): cache ITR times are mixed-speed, never report
   them as timing results.
-  **Next:** rerun `microsoft_test_itr`, `synthetic_test_bbs`, `synthetic_test_itr`; Day 7:
-  fill run IDs in `configs/microsoft_dev_cascade.yaml`, run `cascade_from_cache.py` +
-  `itr_failure_modes.py`, add a full-dev section to `docs/pilot_notes.md`. Then plan Week 2
-  (per-condition synthetic analysis by `dataset_id`, global τ on dev, router, scheduler).
+- 2 Oct 2026, Day 7 done. **All caches complete and checked** (one row per split cluster,
+  only empty clusters failed, no timeouts/crashes, clean tree, pinned engines). Test caches:
+  `microsoft_test_bbs-20261001-232933-r1`, `microsoft_test_itr-20261002-124047-r1`,
+  `synthetic_test_bbs-20261002-142420-r1`, `synthetic_test_itr-20261002-161609-r1`
+  (test accuracy not computed). Interrupted, marked failed, do not use:
+  `microsoft_test_itr-20261001-232952-r1`, `synthetic_test_itr-20261002-142437-r1`.
+  Full Microsoft dev (`configs/microsoft_dev_cascade.yaml`, `docs/pilot_notes.md` Day 7):
+  ITR rescues 16/120 BBS failures (13.3%, CI 8.4–20.6%), harms 261; confidence AUROC 0.958
+  (path weight 0.882); default selector never beats BBS; length check +4 clusters at
+  τ 0.6–0.7 (within noise); harm = homopolymer under-calling (92% wrong length), both-wrong
+  median 7 reads. Pilot findings hold. Synthetic dev per condition: ITR ≥ BBS everywhere
+  except `e03_c05` (95.3 vs 97.3) and `e06_c10_hp50` (58 vs 84: homopolymer bias confirmed).
+  **Next:** plan Week 2 (per-condition synthetic cascade analysis by `dataset_id`, global τ
+  on dev, router, scheduler).
 - Sanity targets **verified** in the BBS paper (iScience 2025, Table 2, "Srinivasavaradhan
   et al." = Microsoft CNR, all 10,000 clusters, default parameters, beam 20): success rate
   (exact match) BBS 94.77%, ITR 87.58%, CPL 94.93%; ITR took 7,352 s (~0.74 s/cluster, i9-13900H).

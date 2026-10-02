@@ -221,3 +221,88 @@ true-strand positions lie in one.
    alongside the default selector. ITR's algorithm is not modified (CLAUDE.md).
 4. Limits: 1,000-cluster pilot only, 86 harmed / 27 both-wrong clusters; the read-level
    check covers 67 of 86 harmed clusters. Re-run on the full dev split when it is cached.
+
+## Day 7 (2 Oct 2026): full Microsoft dev split (3,000 clusters)
+
+The Day 4 analyses repeated on the full dev cache (no reruns, dev only):
+
+```bash
+.venv/bin/python analysis/cascade_from_cache.py configs/microsoft_dev_cascade.yaml
+.venv/bin/python analysis/itr_failure_modes.py configs/microsoft_dev_cascade.yaml
+```
+
+Runs: `microsoft_dev_bbs-20261001-213122-r1` (BBS, 96.00% exact) and
+`microsoft_dev_itr-20261001-213129-r1` (ITR, 87.83%), both code `21fee11`, clean tree.
+Tables: `results/summary/microsoft_dev_cascade.csv`, `microsoft_dev_tau_sweep.csv`,
+`microsoft_dev_itr_failure_modes.csv`. 7 empty clusters count as wrong for both.
+
+Run checks (2 Oct): all 8 cache runs (Microsoft and synthetic, dev and test, BBS and ITR)
+are complete, have one row per cluster of their split, and only empty clusters failed
+(no timeouts or crashes; slowest ITR cluster 8.8 s). The two interrupted runs
+(`microsoft_test_itr-20261001-232952-r1`, `synthetic_test_itr-20261002-142437-r1`) are
+marked failed and not used.
+
+### 2×2 table (exact match, all 3,000 clusters)
+
+| | ITR right | ITR wrong |
+|---|---|---|
+| **BBS right** | 2,619 | 261 |
+| **BBS wrong** | **16 (rescuable)** | 104 (7 empty clusters) |
+
+- **Rescuable share: 16/120 = 13.3%** (Wilson 95% CI 8.4–20.6%), pilot 12.1%. Still
+  below the ~15% guideline; the CI now excludes values above about 21%.
+- On the 120 BBS failures ITR's edit distance is lower in 69, equal in 28, higher in 23.
+- Oracle 96.53% vs BBS 96.00%: at most +0.5 points for any selector.
+
+### Does BBS confidence find its own failures? (2,993 clusters with output, 113 failures)
+
+| Score | AUROC | 95% CI (bootstrap BCa, 2,000) | Pilot |
+|---|---|---|---|
+| Confidence | **0.958** | 0.925–0.974 | 0.907 |
+| Path weight | 0.882 | 0.839–0.915 | 0.889 |
+
+Confidence is now clearly the better signal (the CIs no longer overlap much); it stays
+the router score.
+
+### τ sweep (route to ITR iff confidence < τ)
+
+| τ | Routed | Default: exact | Rescued / harmed | Length check: exact | Rescued / harmed |
+|---|---|---|---|---|---|
+| 0 (BBS only) | 0 | 96.00% | 0 / 0 | 96.00% | 0 / 0 |
+| 0.5 | 55 | 95.83% | 3 / 8 | 96.03% | 3 / 2 |
+| 0.6 | 107 | 95.57% | 9 / 22 | **96.13%** | 9 / 5 |
+| 0.7 | 144 | 95.10% | 10 / 37 | **96.13%** | 10 / 6 |
+| 0.8 | 189 | 94.63% | 10 / 51 | 96.00% | 10 / 10 |
+| 0.9 | 288 | 93.77% | 12 / 79 | 95.93% | 12 / 14 |
+| 0.99 | 922 | 90.20% | 15 / 189 | 95.90% | 15 / 18 |
+| 1.0 | 2,986 | 87.83% | 16 / 261 | 95.80% | 16 / 22 |
+
+- **Default selector: the cascade never beats BBS alone** (same as the pilot).
+- **Length-consistency selector: small gain at τ = 0.6–0.7** (+4 clusters, +0.13 points,
+  routing 4–5% of clusters to ITR). This is the best the cascade does on Microsoft data;
+  4 clusters out of 3,000 is within the size of BBS's own run-to-run variation (~0.5% of
+  clusters change sequence), so treat it as "no harm", not as a real improvement.
+- ITR seconds in the sweep CSV come from the cache run (mixed laptop speed, 1 Oct): cost
+  estimate only, not a timing result.
+
+### Failure modes (2,993 clusters with reads)
+
+| Group | n | Median reads | ITR wrong length | ITR one base short | ITR errors in long runs |
+|---|---|---|---|---|---|
+| Both right | 2,619 | 22 | 0% | 0 | – |
+| **Harmed** (BBS right, ITR wrong) | 261 | 19 | **92%** | **217** | **72%** |
+| Rescued (BBS wrong, ITR right) | 16 | 10 | 0% | 0 | – |
+| Both wrong | 97 | **7** | 77% | 40 | 23% |
+
+Background: 4.65% of true-strand positions lie in runs ≥ 4. Harmed errors are mostly
+deletions (258 of 322). Reads at the run where ITR's only error is one deletion (194
+harmed clusters): 70% of reads shorten the run, and in **97%** of these clusters most
+reads do (vs 25% / 6% at the first long run of 1,853 both-right clusters).
+
+**Verdict: the pilot findings hold on 3× the data.** ITR's harm on Microsoft data is
+homopolymer under-calling that follows the reads' majority; its few rescues need more
+than the ~7 reads of the clusters both engines miss. The synthetic dev cache supports
+this from the other side (dev exact per condition, from the cache runs): with independent errors
+ITR beats BBS at low coverage / high error, and adding homopolymer shortening
+(`e06_c10_hp50`) drops ITR from 100% to 58% while BBS keeps 84%. The per-condition
+cascade analysis of the synthetic grid is the first Week 2 task.

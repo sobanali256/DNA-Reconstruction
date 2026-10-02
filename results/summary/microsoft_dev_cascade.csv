@@ -1,0 +1,26 @@
+section,metric,value,note
+two_by_two,bbs_right_fallback_right,2619,
+two_by_two,bbs_right_fallback_wrong,261,
+two_by_two,bbs_wrong_fallback_right,16,
+two_by_two,bbs_wrong_fallback_wrong,104,
+two_by_two,n_empty_clusters,7,counted as wrong for both
+rescue,n_bbs_wrong,120,
+rescue,rescuable_share,0.1333,fallback exact / BBS wrong; PLAN.md guideline >= 0.15
+rescue,rescuable_share_ci95_low,0.0838,Wilson
+rescue,rescuable_share_ci95_high,0.2056,Wilson
+rescue,fallback_ed_better_on_bbs_wrong,69,
+rescue,fallback_ed_same_on_bbs_wrong,28,
+rescue,fallback_ed_worse_on_bbs_wrong,23,
+rescue,bbs_exact_rate,0.96,
+rescue,oracle_exact_rate,0.9653,either engine exact: ceiling of any selector
+auroc,n_clusters,2993,clusters with BBS output; empty clusters excluded
+auroc,n_bbs_wrong,113,
+auroc,confidence,0.9575,lower value = predicted failure
+auroc,confidence_ci95_low,0.9245,"bootstrap BCa, 2000 resamples"
+auroc,confidence_ci95_high,0.9737,
+auroc,path_weight,0.8819,lower value = predicted failure
+auroc,path_weight_ci95_low,0.839,"bootstrap BCa, 2000 resamples"
+auroc,path_weight_ci95_high,0.9145,
+runs,bbs_run,microsoft_dev_bbs-20261001-213122-r1,
+runs,fallback_run,microsoft_dev_itr-20261001-213129-r1,itr_only
+runs,split,dev,
