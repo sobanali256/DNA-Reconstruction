@@ -1,0 +1,16 @@
+# FROZEN (methodology freeze): the Week 3 scaling campaign. Workload = the full synthetic TEST
+# split (9,100 clusters) at the frozen tau (0.8, ~2,900 clusters to ITR, ~10 min serial).
+# Timing protocol: laptop plugged in, Windows "Best performance", idle, nothing else running.
+#   .venv/bin/python scripts/run_scaling.py configs/final/scaling.yaml
+#   .venv/bin/python analysis/scaling_summary.py configs/final/scaling.yaml
+campaign: scaling_synthetic_test
+base: configs/final/adaptive_synthetic.yaml
+overrides: {}
+cells:
+  - {scheduler: serial, workers: [1]}
+  - {scheduler: dynamic, workers: [1, 2, 4, 8]}
+  - {scheduler: static, workers: [2, 4, 8]}
+  - {scheduler: static_lpt, workers: [4]}
+warmup: 1
+repetitions: 3
+output_prefix: results/summary/scaling_synthetic_test

@@ -1,0 +1,23 @@
+# FROZEN (methodology freeze): SECONDARY policy for the synthetic grid, length-consistency selector.
+#   .venv/bin/python scripts/run_experiment.py configs/final/adaptive_synthetic_lengthcheck.yaml
+# tau 0.99 = analysis/select_tau.py on dev only, same rule as the primary policy, length_check
+# selector (keeps BBS when ITR output length differs from the designed length).
+experiment_name: final_synthetic_test_adaptive_lengthcheck
+dataset: configs/dataset_synthetic.yaml
+clusters: data/splits/synthetic_grid_split.csv
+split: test
+method: adaptive
+tau: 0.99
+selector: length_check
+bbs:
+  config: configs/bbs.yaml
+  threads: 4          # = itr.workers: one native-concurrency cap for both stages
+  shards: 1
+itr:
+  config: configs/itr.yaml
+  scheduler: dynamic
+  workers: 4          # physical cores
+  microbatch_size: 5
+  partition_seed: 20261002   # used by the static schedulers only
+repetitions: 1
+output_root: results/

@@ -1,0 +1,23 @@
+# FROZEN (methodology freeze): the primary adaptive policy for Microsoft CNR, held-out test split.
+#   .venv/bin/python scripts/run_experiment.py configs/final/adaptive_microsoft.yaml
+# tau 0 = analysis/select_tau.py on dev only (same rule as synthetic): no tau beats BBS alone
+# by more than 0.25 points on Microsoft dev, so the deployable policy routes nothing (BBS only).
+experiment_name: final_microsoft_test_adaptive
+dataset: configs/dataset_microsoft.yaml
+clusters: data/splits/microsoft_cnr_split.csv
+split: test
+method: adaptive
+tau: 0.0
+selector: default
+bbs:
+  config: configs/bbs.yaml
+  threads: 4          # = itr.workers: one native-concurrency cap for both stages
+  shards: 1
+itr:
+  config: configs/itr.yaml
+  scheduler: dynamic
+  workers: 4          # physical cores
+  microbatch_size: 5
+  partition_seed: 20261002   # used by the static schedulers only
+repetitions: 1
+output_root: results/
