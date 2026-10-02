@@ -94,6 +94,20 @@ def test_bbs_shard_failure_fails_the_cluster():
     assert r.itr_status == "not_routed"
 
 
+def test_bbs_shard_failure_routed_to_itr_is_rescued():
+    """No BBS output counts as confidence 0, so the cluster may go to ITR (2 Oct 2026)."""
+    r = build(method="adaptive", bbs_shard_failed=True, itr=itr())
+    assert (r.bbs_status, r.routed_to_itr, r.final_algorithm, r.status) == ("shard_failed", True, "itr", "ok")
+
+
+def test_bbs_shard_failure_and_itr_failure_report_both():
+    r = build(method="adaptive", bbs_shard_failed=True, itr=itr(status="timeout"))
+    assert (r.final_algorithm, r.status) == ("none", "failed")
+    assert r.failure_reason.startswith("bbs_shard_failed; itr_timeout")
+    r = build(method="adaptive", bbs_shard_failed=True, itr_task_failed=True)
+    assert r.failure_reason == "bbs_shard_failed; itr_task_failed"
+
+
 def test_failed_itr_task_is_routed_and_falls_back_to_bbs():
     r = attach_metrics(build(method="adaptive", bbs=bbs(), itr_task_failed=True,
                              itr_task_id="t1", worker_id=1), TRUTH)
@@ -120,7 +134,6 @@ def test_empty_bbs_string_is_an_output():
     dict(method="itr_only", bbs=bbs(), itr=itr()),  # BBS in an ITR-only run
     dict(method="adaptive", bbs=bbs(cid="other")),  # wrong cluster
     dict(method="adaptive", bbs=bbs(), worker_id=1),  # worker without ITR
-    dict(method="adaptive", bbs_shard_failed=True, itr=itr()),  # routed without confidence
     dict(method="adaptive", bbs=bbs(), itr=itr(), itr_task_failed=True),  # result + failed task
     dict(method="bbs_only", bbs=bbs(), itr_task_failed=True),  # ITR task in a BBS-only run
     dict(method="itr_only", itr=itr(), bbs_shard_failed=True),  # BBS shard in an ITR-only run

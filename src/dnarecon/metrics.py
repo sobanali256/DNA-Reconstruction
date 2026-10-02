@@ -122,13 +122,16 @@ def cascade_outcome(df: pd.DataFrame, tau: float, length_check: bool = False) ->
 
     Needs the columns bbs_confidence, bbs_exact_match, bbs_edit_distance, itr_failed,
     itr_sequence, itr_exact_match, itr_edit_distance, itr_runtime_ms, expected_length.
-    Routing: BBS confidence < tau; no confidence (empty cluster) never routes.
+    Routing as dnarecon.router: BBS confidence < tau; a cluster whose BBS shard failed
+    (bbs_status shard_failed) counts as confidence 0; an empty cluster never routes.
     Selection copies dnarecon.results.build_record: a successful ITR result wins, else BBS.
     `length_check` (label-free variant) also keeps BBS when ITR's output length differs
     from the designed length. Benefit/harm compare the final edit distance with BBS's
     among routed clusters, so an ITR failure (BBS kept) counts as unchanged.
     """
     routed = df.bbs_confidence < tau
+    if "bbs_status" in df:  # no BBS output (failed shard) = confidence 0
+        routed |= df.bbs_status.eq("shard_failed") & (tau > 0)
     use_itr = routed & df.itr_failed.eq(False)
     if length_check:
         use_itr &= df.itr_sequence.str.len().eq(df.expected_length)

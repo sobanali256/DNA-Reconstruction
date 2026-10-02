@@ -12,18 +12,18 @@ CONF = {"a": 0.2, "b": 0.5, "c": 0.79, "d": 0.8, "e": 1.0, "f": None}
 
 
 def test_g3_1_boundary_confidence_equal_to_tau_is_not_routed():
-    assert route(CONF, 0.8) == ["a", "b", "c"]  # d (= tau) stays with BBS
+    assert route(CONF, 0.8) == ["a", "b", "c", "f"]  # d (= tau) stays with BBS
     assert route({"x": 0.5}, 0.5) == [] and route({"x": 0.5}, 0.5000001) == ["x"]
 
 
 def test_g3_3_tau_zero_routes_none_and_tau_one_all_but_confidence_one():
-    assert route(CONF, 0) == []
-    assert route(CONF, 1) == ["a", "b", "c", "d"]
+    assert route(CONF, 0) == []  # not even f: tau 0 is the BBS-only policy
+    assert route(CONF, 1) == ["a", "b", "c", "d", "f"]
 
 
-def test_no_confidence_is_never_routed_and_order_is_kept():
-    assert "f" not in route(CONF, 1)
-    assert route({"z": 0.1, "y": 0.3, "x": 0.2}, 1) == ["z", "y", "x"]
+def test_no_bbs_output_counts_as_confidence_zero_and_order_is_kept():
+    assert route({"f": None}, 1e-9) == ["f"] and route({"f": None}, 0) == []
+    assert route({"z": 0.1, "y": None, "x": 0.2}, 1) == ["z", "y", "x"]
 
 
 @pytest.mark.parametrize("tau", [-0.1, 1.5])

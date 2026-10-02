@@ -164,3 +164,13 @@ def test_failure_auroc_hand_checked():
     auc, low, high = failure_auroc(is_wrong, [4, 3, 2, 1] * 50, n_resamples=200, seed=1)
     assert auc == 0.75 and low <= auc <= high
     assert failure_auroc(is_wrong, [-4, -3, -2, -1] * 50, n_resamples=200, seed=1)[0] == 0.25
+
+
+def test_cascade_routes_failed_bbs_shard_like_the_router():
+    """bbs_status shard_failed counts as confidence 0; an empty cluster never routes."""
+    df = CACHE.assign(bbs_status=["ok", "ok", "ok", "ok", "empty_cluster", "ok"])
+    df.loc[0, ["bbs_status", "bbs_confidence", "bbs_exact_match"]] = ["shard_failed", None, False]
+    out = cascade_outcome(df, 0.1)
+    assert (out["n_routed"], out["rescued"]) == (1, 1)  # only the failed shard; ITR right
+    assert cascade_outcome(df, 0)["n_routed"] == 0
+    assert cascade_outcome(df, 1.0)["n_routed"] == 5  # e (empty) still never

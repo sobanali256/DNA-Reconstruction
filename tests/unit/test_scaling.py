@@ -62,15 +62,17 @@ def test_summary_uses_one_invocation_only(tmp_path):
         camp = {"name": "camp", "invocation": invocation, "measured": measured}
         (d / "manifest.json").write_text(json.dumps(
             {"run_id": run_id, "status": status, "measured": measured, "config": {"campaign": camp}}))
+        (d / "timing.csv").write_text("kind,status\nstage,ok\nrun," + ("failed" if run_id == "b4" else "ok") + "\n")
 
     manifest("a1", "20261002-100000")
     manifest("b1", "20261002-120000")
     manifest("b2", "20261002-120000", status="failed")
     manifest("b3", "20261002-120000", measured=False)
+    manifest("b4", "20261002-120000")  # a stage failed (e.g. a BBS shard): workload changed
     manifest("other", "20261002-120000")
     (tmp_path / "other" / "manifest.json").write_text(json.dumps({"run_id": "other", "config": {}}))
     used, skipped, inv = campaign_runs(tmp_path, "camp", None)
     assert inv == "20261002-120000" and [m["run_id"] for m in used] == ["b1"]
-    assert len(skipped) == 3  # a1 (older launch), b2 (failed), b3 (warm-up); "other" is not in the campaign
+    assert len(skipped) == 4  # a1 (older launch), b2 (failed), b3 (warm-up), b4 (failed stage)
     used, _, inv = campaign_runs(tmp_path, "camp", "20261002-100000")
     assert [m["run_id"] for m in used] == ["a1"]

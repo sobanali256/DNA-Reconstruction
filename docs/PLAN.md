@@ -124,8 +124,14 @@ If engineering spills into Week 4, **cut a grid condition** rather than writing 
 Everything below was decided on dev data only, before any test-split result was opened.
 Frozen configs: `configs/final/`.
 
-- **Router:** route a cluster to ITR iff BBS confidence < τ (`src/dnarecon/router.py`). No
-  BBS output (empty cluster, failed shard) never routes. No learned routing.
+- **Router:** route a cluster to ITR iff BBS confidence < τ (`src/dnarecon/router.py`).
+  A non-empty cluster without BBS output (failed BBS shard) counts as confidence 0, so it is
+  routed whenever τ > 0: the fallback covers primary failures, as BBS covers ITR failures.
+  τ = 0 routes nothing (BBS-only policy). Empty clusters (no reads) never go to any engine.
+  A BBS failure stays visible: `bbs_status` shard_failed, the BBS stage and run are marked
+  failed, the manifest counts `n_bbs_failed` / `n_routed_without_bbs`, and the paper
+  reports the count. Timing summaries use only runs whose stages all succeeded (G8.6).
+  No learned routing.
 - **Selector:** primary = default (a successful ITR result replaces BBS; ITR failure or
   timeout keeps BBS). Secondary = length check (also keeps BBS when ITR's output length
   differs from the designed length). Neither uses ground truth.

@@ -14,7 +14,8 @@ Methods:
   * itr_only: micro-batches of `itr.microbatch_size` clusters on `itr.workers` workers,
     scheduled by `itr.scheduler` (serial | static | static_lpt | dynamic, dnarecon.scheduler);
   * adaptive: Stage A BBS (as bbs_only), Stage B route clusters with confidence < `tau`
-    (dnarecon.router), Stage C ITR on the routed clusters only (as itr_only); final
+    or without BBS output (dnarecon.router; empty clusters never), Stage C ITR on the
+    routed clusters only (as itr_only); final
     selection by `selector` (default | length_check, dnarecon.results.build_record).
 
 `warmup: N` (optional) first runs N unmeasured repetitions (<run_id> ending -w<k>, manifest
@@ -271,10 +272,11 @@ def _run_adaptive(cfg, engine_cfg, clusters, splits, run_id, run_dir, root, log)
 
     stage_start, stage_epoch = time.perf_counter(), time.time()
     confidences = {c.cluster_id: bbs[c.cluster_id].confidence if c.cluster_id in bbs else None
-                   for c in clusters}  # IDs and confidences only: the router sees nothing else
+                   for c in clusters if not c.is_empty}  # IDs and confidences only (None: BBS failed)
     routed = set(route(confidences, tau))
     timing.append(_stage(run_id, "route", len(clusters), None, stage_epoch, stage_start, "ok"))
-    log(f"[{run_id}] routed {len(routed)}/{len(clusters)} clusters to ITR (tau {tau})")
+    log(f"[{run_id}] routed {len(routed)}/{len(clusters)} clusters to ITR (tau {tau})"
+        + (f", {len(routed & bbs_failed)} of them without BBS output" if bbs_failed else ""))
 
     to_itr = [c for c in clusters if c.cluster_id in routed]  # list order kept
     itr, task_of, worker_of, itr_failed, itr_timing, sched = _itr_stage(cfg, itr_settings, to_itr,
@@ -291,6 +293,7 @@ def _run_adaptive(cfg, engine_cfg, clusters, splits, run_id, run_dir, root, log)
     ]
     routed_ids = "\n".join(c.cluster_id for c in to_itr)
     extra = {"tau": tau, "selector": selector, "n_routed": len(to_itr),
+             "n_bbs_failed": len(bbs_failed), "n_routed_without_bbs": len(routed & bbs_failed),
              "routed_ids_sha256": hashlib.sha256(routed_ids.encode()).hexdigest(), "scheduler": sched}
     return records, timing, extra
 

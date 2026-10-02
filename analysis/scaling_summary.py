@@ -4,7 +4,8 @@
 
 Finds the campaign's run folders by the `campaign` block in their manifests and keeps one
 invocation of scripts/run_scaling.py (the latest, or --invocation), measured complete runs
-only; everything else is listed as not used. Stops unless every cell has all its
+whose stages all succeeded only (a failed BBS shard or ITR task changes the workload; G8.6);
+everything else is listed as not used. Stops unless every cell has all its
 repetitions (G8.1; --allow-incomplete only to inspect a partial campaign) and every run
 used the same code, dataset files, cluster list, clusters and routed set (G8.3).
 Per run (from timing.csv and the manifest):
@@ -53,10 +54,18 @@ def campaign_runs(output_root: Path, name: str, invocation: str | None) -> tuple
     for m in found:
         ok = (m["_camp"].get("invocation") == invocation and m.get("status") == "complete"
               and m.get("measured", True) and m["_camp"].get("measured", True))
+        stages = stages_status(m["_dir"]) if m.get("status") == "complete" else "-"
+        ok = ok and stages == "ok"
         (used.append(m) if ok else skipped.append(
             f"{m['run_id']} (invocation {m['_camp'].get('invocation')}, {m.get('status')}, "
-            f"measured={m.get('measured')})"))
+            f"stages {stages}, measured={m.get('measured')})"))
     return used, skipped, invocation
+
+
+def stages_status(run_dir: Path) -> str:
+    """'ok' when every stage of the run succeeded (the run row of timing.csv), else 'failed'."""
+    timing = pd.read_csv(run_dir / "timing.csv")
+    return timing.loc[timing.kind == "run", "status"].iloc[0]
 
 
 def run_row(m: dict) -> dict:

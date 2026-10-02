@@ -288,12 +288,29 @@ def test_adaptive_length_check_keeps_bbs_on_wrong_length(root, fake_engines):
     assert rows["c1"].final_algorithm == "itr"
 
 
-def test_adaptive_failed_bbs_shard_is_never_routed(root, fake_engines, monkeypatch):
+def test_adaptive_failed_bbs_shard_goes_to_itr(root, fake_engines, monkeypatch):
+    """No BBS output counts as confidence 0: routed whenever tau > 0; empty clusters never."""
     def failing_bbs(chunk, settings, **kwargs):
         from dnarecon.bbs_adapter import BbsRunError
         raise BbsRunError("down")
     monkeypatch.setattr(runner, "run_shard", failing_bbs)
-    _, rows = run_adaptive(root, tau=1)
+    run_dir, rows = run_adaptive(root, tau=0.05)
+    assert fake_engines["seen"] == ["c1", "c2", "c3", "c4"]
+    assert all((r.bbs_status, r.final_algorithm, r.status) == ("shard_failed", "itr", "ok")
+               for cid, r in rows.items() if cid != "e")
+    assert rows["e"].failure_reason == "empty_cluster" and not rows["e"].routed_to_itr
+    manifest = json.loads((run_dir / "manifest.json").read_text())
+    assert (manifest["n_bbs_failed"], manifest["n_routed_without_bbs"]) == (4, 4)
+    stages = {t.id: t.status for t in read_timing(run_dir / "timing.csv") if t.kind in ("stage", "run")}
+    assert stages["bbs"] == "failed" and stages[run_dir.name] == "failed"  # still visible
+
+
+def test_adaptive_tau_zero_never_routes_even_without_bbs_output(root, fake_engines, monkeypatch):
+    def failing_bbs(chunk, settings, **kwargs):
+        from dnarecon.bbs_adapter import BbsRunError
+        raise BbsRunError("down")
+    monkeypatch.setattr(runner, "run_shard", failing_bbs)
+    _, rows = run_adaptive(root, tau=0)
     assert fake_engines["seen"] == []
     assert all(r.failure_reason in ("bbs_shard_failed", "empty_cluster") for r in rows.values())
 

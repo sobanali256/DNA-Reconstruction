@@ -53,7 +53,8 @@ def build_record(
     """Combine one cluster's engine outputs into a ResultRecord (no quality columns yet).
 
     In an adaptive run the cluster counts as routed to ITR exactly when `itr` is given or
-    `itr_task_failed` is set. `bbs_shard_failed` / `itr_task_failed` mark a cluster whose
+    `itr_task_failed` is set; a cluster whose BBS shard failed may be routed (no BBS output
+    counts as confidence 0, dnarecon.router). `bbs_shard_failed` / `itr_task_failed` mark a cluster whose
     BBS shard / ITR task failed as a whole (BbsRunError / ItrRunError): no per-cluster
     result exists, and the cluster is recorded as that engine's failure.
     """
@@ -94,8 +95,6 @@ def build_record(
             bbs_status = "ok"
         if method == "itr_only" and not ran_itr:
             raise ValueError(f"{cid}: missing ITR result")
-        if method == "adaptive" and bbs_shard_failed and ran_itr:
-            raise ValueError(f"{cid}: cannot route without a BBS confidence")
         if itr is not None:
             itr_status = itr.status
         elif itr_task_failed:
@@ -117,12 +116,13 @@ def build_record(
         failure_reason = ""
     elif cluster.is_empty:
         failure_reason = "empty_cluster"
-    elif bbs_status == "shard_failed":
-        failure_reason = "bbs_shard_failed"
-    elif itr_task_failed:
-        failure_reason = "itr_task_failed"
-    else:  # ITR-only run and ITR failed
-        failure_reason = f"itr_{itr.status}" + (f": {itr.failure_reason}" if itr.failure_reason else "")
+    else:
+        reasons = ["bbs_shard_failed"] if bbs_status == "shard_failed" else []
+        if itr_task_failed:
+            reasons.append("itr_task_failed")
+        elif itr is not None:  # ITR ran and failed (ITR-only run, or routed after a BBS failure)
+            reasons.append(f"itr_{itr.status}" + (f": {itr.failure_reason}" if itr.failure_reason else ""))
+        failure_reason = "; ".join(reasons)
 
     return ResultRecord(
         run_id=run_id,
