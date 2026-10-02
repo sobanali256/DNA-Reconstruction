@@ -184,6 +184,8 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
 - 2 Oct 2026, Week 2 items 1–5 done (`6eff2d0`, `aa4b174`, `04f84ce`, `c7328e8`, `243b9dd`,
   code review fixes `bd09263`: summary uses one `run_scaling` invocation and stops on
   incomplete cells or mixed code/data, cells validated up front, Ctrl-C cancels ITR relaunch;
+  BBS failures routed to ITR `4a0599c`; second review `7c6853e`: one selection rule
+  `metrics.itr_selected` for live and cache, summary picks the latest complete clean launch;
   plan `docs/PLAN.md` "Methodology", results `docs/pilot_notes.md` Days 8–9).
   Synthetic dev per condition: ITR rescues 66% of BBS failures (13% on Microsoft); `hp50`
   reproduces the Microsoft harm; cascade 89.0% at τ 0.9 vs BBS 75.8% / ITR 88.6%; length

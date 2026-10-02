@@ -414,5 +414,5 @@ huge one times out; all others complete). G5.7 from Day 2.
 + 9 cells × 3 repetitions, all complete, no timeouts, peak concurrency = workers in every
 run). Machinery check only: with 47 clusters (10 micro-batches) the slowest single
 micro-batch bounds the makespan, so speedups plateau near 1.7× from 2 workers on. Table:
-`results/summary/scaling_smoke_cells.csv` (invocation `20261002-203943`, rerun after the
-code review fixes `bd09263`; the first smoke invocation is kept but not used).
+`results/summary/scaling_smoke_cells.csv` (invocation `20261002-210900`, code `7c6853e`
+after both code reviews; earlier smoke invocations are kept but not used).
