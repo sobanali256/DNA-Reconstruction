@@ -118,3 +118,35 @@ If engineering spills into Week 4, **cut a grid condition** rather than writing 
 - Timing only on this laptop: plugged in, Best performance mode, idle machine, warm-up,
   ≥3 repetitions.
 - The bioinformatics paper reuses the same cached tables; no separate experiments.
+
+## Methodology (frozen 2 Oct 2026, git tag `methodology-freeze`)
+
+Everything below was decided on dev data only, before any test-split result was opened.
+Frozen configs: `configs/final/`.
+
+- **Router:** route a cluster to ITR iff BBS confidence < τ (`src/dnarecon/router.py`). No
+  BBS output (empty cluster, failed shard) never routes. No learned routing.
+- **Selector:** primary = default (a successful ITR result replaces BBS; ITR failure or
+  timeout keeps BBS). Secondary = length check (also keeps BBS when ITR's output length
+  differs from the designed length). Neither uses ground truth.
+- **τ rule** (`analysis/select_tau.py`, `configs/tau_selection.yaml`): per dataset family,
+  the cheapest τ in {0, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99, 1} whose pooled dev exact rate
+  is within 0.25 points of the best τ; cost = share routed to ITR. One global τ for all 13
+  synthetic conditions; Microsoft separately. Per-condition τ is reported only as a
+  labeled oracle analysis.
+- **Frozen τ:** synthetic **0.8** (default selector; length check 0.99); Microsoft **0**
+  (BBS only: no τ beats BBS by more than 0.25 points on dev).
+- **Schedulers** (`src/dnarecon/scheduler.py`): serial; static (micro-batches shuffled with
+  a fixed seed, then equal contiguous blocks per worker); static_lpt (labeled extra:
+  longest first by min(coverage, 25)², to the least-loaded worker); dynamic (shared queue).
+  Worker threads launch native processes. One native-concurrency cap for both stages:
+  BBS `-t` = ITR workers.
+- **Scaling campaign** (`configs/final/scaling.yaml`): the full synthetic test split
+  (9,100 clusters) at τ = 0.8; cells serial-1, dynamic 1/2/4/8, static 2/4/8, static_lpt 4;
+  micro-batch 5; one unmeasured warm-up; 3 repetitions with the cell order rotated each
+  repetition; median, IQR and min/max. T1 = serial cell. 8 workers = hyper-threaded,
+  reported separately. Laptop plugged in, "Best performance", idle.
+- **Metrics:** makespan = whole adaptive run (BBS + route + ITR); BBS and ITR stage times
+  reported separately; speedup S = T1/Tp, efficiency S/p, utilization = ITR busy time /
+  (p × ITR stage time), imbalance = max/mean worker busy time
+  (`analysis/scaling_summary.py`).

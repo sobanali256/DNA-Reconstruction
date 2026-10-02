@@ -391,3 +391,26 @@ reads each run's manifest and stops on anything else, gate G7.5). Table:
 - Per-condition (oracle) τ ranges from 0 (`hp50`, low-error conditions) to 1 (`e06_c10`,
   `e09_c10`, `e12_c10`, `e12_c20`). With 300 clusters per condition, 0.25 points is less than
   one cluster, so the oracle rule picks each condition's best τ.
+
+## Day 9 (2 Oct 2026): live adaptive pipeline and scheduler checks
+
+**Adaptive run = cache prediction.** `configs/synthetic_dev_adaptive.yaml` (τ 0.8, default
+selector, serial ITR) ran live on all 3,900 synthetic dev clusters
+(`synthetic_dev_adaptive-20261002-201111-r1`, code `04f84ce`): 1,226 clusters routed and
+3,462 exact, both identical to the cached τ sweep. BBS confidences and every routed ITR
+output are identical to the cache runs; 45 BBS sequences differ, all at confidence ≤ 0.5
+(BBS tie-breaking), and no cluster changes its exact-match outcome.
+
+**Gates.** Unit and integration tests (`tests/unit/test_router.py`, `test_scheduler.py`,
+`test_runner.py`, `tests/integration/test_adaptive_real.py`, `test_scheduler_real.py`):
+G3.1–G3.5 (router boundary, τ = 0/1, no ground truth in the router, every row has
+routing and final algorithm, same cluster IDs as BBS-only), G5.1 (serial = dynamic with 1
+worker), G5.2 (every task once), G5.3/G5.6 (configured concurrency reached, never
+exceeded; peak recorded in every manifest), G5.4 (repeated dynamic and static schedules
+give identical routing and ITR output), G5.5 (an invalid cluster fails only its task, a
+huge one times out; all others complete). G5.7 from Day 2.
+
+**Smoke campaign** (`configs/scaling_smoke.yaml`: 130 dev clusters, 47 routed; 1 warm-up
++ 9 cells × 3 repetitions, all complete, no timeouts, peak concurrency = workers in every
+run). Machinery check only: with 47 clusters (10 micro-batches) the work is too small for
+meaningful speedups (best 1.68× at 4 workers). Table: `results/summary/scaling_smoke_cells.csv`.
