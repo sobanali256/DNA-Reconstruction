@@ -14,7 +14,7 @@ Conventions (decided 30 Sep 2026):
   we compare with the paper (it does not say how it handled missing outputs).
 - Every rate uses all eligible clusters as the denominator.
 
-`cascade_outcome` and `failure_auroc` (Day 4) work on cached BBS-only + ITR-only results,
+`cascade_frame` / `cascade_outcome` and `failure_auroc` (Day 4) work on cached BBS-only + ITR-only results,
 one DataFrame row per cluster (see analysis/cascade_from_cache.py).
 """
 
@@ -132,15 +132,16 @@ def itr_selected(itr_ok, has_bbs, itr_length, expected_length, selector: str):
     return itr_ok & ((has_bbs & (itr_length != expected_length)) == False)  # noqa: E712 (Series too)
 
 
-def cascade_outcome(df: pd.DataFrame, tau: float, length_check: bool = False) -> dict:
-    """The adaptive pipeline at threshold `tau`, simulated from cached BBS and ITR results.
+def cascade_frame(df: pd.DataFrame, tau: float, length_check: bool = False) -> pd.DataFrame:
+    """The adaptive pipeline at threshold `tau`, simulated per cluster from cached BBS and ITR results.
 
     Needs the columns bbs_confidence, bbs_exact_match, bbs_edit_distance, itr_failed,
-    itr_sequence, itr_exact_match, itr_edit_distance, itr_runtime_ms, expected_length.
+    itr_sequence, itr_exact_match, itr_edit_distance, expected_length (bbs_status optional).
     Routing as dnarecon.router: BBS confidence < tau; a cluster whose BBS shard failed
     (bbs_status shard_failed) counts as confidence 0; an empty cluster never routes.
-    Selection: itr_selected, the same rule as dnarecon.results.build_record. Benefit/harm compare the final edit distance with BBS's
-    among routed clusters, so an ITR failure (BBS kept) counts as unchanged.
+    Selection: itr_selected, the same rule as dnarecon.results.build_record.
+    Returns one row per cluster (same index): routed, has_bbs, use_itr, ok (final exact
+    match), ed (final edit distance).
     """
     routed = df.bbs_confidence < tau
     if "bbs_status" in df:  # no BBS output (failed shard) = confidence 0
@@ -148,9 +149,24 @@ def cascade_outcome(df: pd.DataFrame, tau: float, length_check: bool = False) ->
     has_bbs = df.bbs_status.eq("ok") if "bbs_status" in df else df.bbs_confidence.notna()
     use_itr = itr_selected(routed & df.itr_failed.eq(False), has_bbs, df.itr_sequence.str.len(),
                            df.expected_length, "length_check" if length_check else "default")
+    return pd.DataFrame({
+        "routed": routed,
+        "has_bbs": has_bbs,
+        "use_itr": use_itr,
+        "ok": df.itr_exact_match.where(use_itr, df.bbs_exact_match.astype(bool)).astype(bool),
+        "ed": df.itr_edit_distance.where(use_itr, df.bbs_edit_distance),
+    }, index=df.index)
+
+
+def cascade_outcome(df: pd.DataFrame, tau: float, length_check: bool = False) -> dict:
+    """cascade_frame aggregated: the adaptive pipeline at threshold `tau` from cached results.
+
+    Also needs itr_runtime_ms. Benefit/harm compare the final edit distance with BBS's
+    among routed clusters, so an ITR failure (BBS kept) counts as unchanged.
+    """
+    frame = cascade_frame(df, tau, length_check)
+    routed, final_ok, final_ed = frame.routed, frame.ok, frame.ed
     bbs_ok = df.bbs_exact_match.astype(bool)
-    final_ok = df.itr_exact_match.where(use_itr, bbs_ok).astype(bool)
-    final_ed = df.itr_edit_distance.where(use_itr, df.bbs_edit_distance)
     n_routed = int(routed.sum())
     n_bbs_wrong = int((~bbs_ok).sum())
     caught = int((routed & ~bbs_ok).sum())

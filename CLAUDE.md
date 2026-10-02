@@ -211,6 +211,8 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
   **88.85%** (31% routed), length check **91.25%** (60% routed); all within ~0.5 pt of dev.
   hp50: primary cascade harms (78.4 vs 86.0), length check fixes it (86.9). AUROC Microsoft
   0.933, synthetic 0.947. Post hoc only: Microsoft length check τ 0.7–0.9 is +0.2 pt.
+  Code review fixes: live rows paired with the live run's own BBS, `mcnemar_log10_p`,
+  input/live-vs-cache guards, `metrics.cascade_frame` (all summaries byte-identical).
   **Next (Week 3):** full scaling campaign (`configs/final/scaling.yaml`, overnight, idle
   laptop, timing protocol), figures, writing brief update.
 - Sanity targets **verified** in the BBS paper (iScience 2025, Table 2, "Srinivasavaradhan
