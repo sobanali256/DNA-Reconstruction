@@ -453,3 +453,54 @@ Written and committed before any test-split accuracy was computed. The final run
   rescued 3); the length check removes most of the harm (dev 85.3).
 - Microsoft: confidence AUROC ≈ 0.96; ITR rescues ≈ 13% of BBS failures and harms more;
   harm = homopolymer under-calling (ITR outputs of the wrong length).
+
+## Day 10 (3 Oct 2026): test results (frozen τ, opened after the plan above was committed)
+
+Code `30778bf`. `analysis/final_results.py configs/final/test_report.yaml` →
+`results/summary/final_test_table.csv`, `final_live_vs_cache.csv`; `analysis/cascade_from_cache.py`
+and `itr_failure_modes.py` on `configs/{microsoft,synthetic}_test_cascade.yaml` →
+`results/summary/{microsoft,synthetic}_test_*.csv`.
+
+**Live = cache.** All three final runs: routing, BBS confidence and every ITR output identical
+to the cache prediction; no exact-match outcome differs (Microsoft 6,687 = 6,687; synthetic
+8,085 = 8,085; length check 8,304 = 8,304). BBS sequences differ on 14 / 106 / 95 clusters,
+all at confidence ≤ 0.5 (tie-breaking); they change 14 / 0 / 20 final sequences but no
+exact-match outcome.
+
+**Headline (exact match, 95% Wilson CI; McNemar vs BBS only).**
+
+| Family | BBS only | ITR only | Adaptive primary | Adaptive length check | Dev (BBS / ITR / primary / LC) |
+|---|---|---|---|---|---|
+| Microsoft (7,000; 9 empty) | 95.53 [95.0, 96.0] | 87.27 [86.5, 88.0] | 95.53 (τ 0 = BBS only) | — | 96.00 / 87.83 / 96.00 / — |
+| Synthetic pooled (9,100) | 76.30 | 88.68 [88.0, 89.3] | **88.85** [88.2, 89.5], 30.9% routed | **91.25** [90.7, 91.8], 60.1% routed | 75.85 / 88.74 / 88.77 / 91.38 |
+
+- Test reproduces dev within about half a point everywhere: τ was not over-fitted to dev.
+  Microsoft BBS 95.53% vs the BBS paper's 94.77% on all 10,000 (ITR 87.27 vs 87.58).
+- Synthetic primary vs BBS only: rescued 1,268, harmed 126 (p ≈ 1e-237). It matches ITR only
+  (88.68) while routing 31% of clusters. Length check: rescued 1,381, harmed 20.
+- Per condition (test, BBS → primary → length check): large gains where reads are few or
+  noisy (e06_c05 65.9 → 83.6 → 90.3; e09_c05 16.9 → 65.7 → 70.0; e12_c05 2.4 → 41.0 → 42.0;
+  e12_c10 44.0 → 91.3 → 98.0; e09_c10 82.9 → 97.3 → 99.7); 100% everywhere at coverage 20
+  and at 3% error with coverage ≥ 10. At coverage 5 the primary cascade is slightly below
+  ITR only (e06_c05 83.6 vs 84.6; e09_c05 65.7 vs 68.9): low-confidence-but-right BBS calls
+  stay with BBS, and some high-confidence BBS calls are wrong (AUROC 0.60–0.79 there).
+- **`e06_c10_hp50`** (homopolymer bias): primary cascade *harms*: 78.4 vs BBS 86.0
+  (rescued 5, harmed 58, p ≈ 2e-12); ITR only 62.0. The length check removes the harm:
+  86.9 (rescued 8, harmed 2, p 0.11, not significant). Harmed ITR outputs: 98.9% wrong length,
+  98.6% of their errors in runs ≥ 4. Same as dev.
+- **2×2.** Microsoft: ITR rescues 51 / 313 BBS failures = 16.3% [12.6, 20.8] (dev 13.3%),
+  harms 629. Synthetic pooled: 1,403 / 2,157 = 65.0% [63.0, 67.0] (dev 66.0%), harms 276.
+  Microsoft harm is again homopolymer under-calling: 92.9% of harmed ITR outputs have the
+  wrong length, 65% of their errors in runs ≥ 4.
+- **Confidence AUROC** (BBS failure): Microsoft 0.933 [0.912, 0.949] (dev 0.958; path weight
+  0.879); synthetic pooled 0.947 [0.941, 0.953] (dev 0.944); per condition 0.60 (e12_c05) to
+  0.96 (e03_c05); lowest at coverage 5 / high error.
+- **Edit distance** (mean normalized, no output = 1): synthetic BBS-only failures are far
+  from the truth, so the length check (keeps BBS when ITR's length is wrong) has the best
+  exact rate but a higher mean normalized edit distance (0.0043) than the primary cascade
+  (0.0027) or ITR only (0.0017). Report both: exact rate is the primary metric.
+- **Post hoc test τ sweep (not used to choose τ).** Synthetic primary: 0.8 is the best τ on
+  test too (88.85; 0.9 → 88.81). Microsoft default selector: τ 0 is best (any routing loses).
+  Microsoft **length check**: τ 0.7–0.9 gives 95.73–95.76 vs 95.53 BBS only (+0.2 points,
+  rescued 30–45 vs harmed 16–29); on dev the same policy was within noise (+4 clusters), so
+  the frozen rule chose BBS only. Report as a post hoc observation, not as a result.

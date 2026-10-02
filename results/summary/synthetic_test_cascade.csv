@@ -1,0 +1,312 @@
+dataset_id,section,metric,value,note
+all,two_by_two,bbs_right_fallback_right,6667,
+all,two_by_two,bbs_right_fallback_wrong,276,
+all,two_by_two,bbs_wrong_fallback_right,1403,
+all,two_by_two,bbs_wrong_fallback_wrong,754,
+all,two_by_two,n_empty_clusters,0,counted as wrong for both
+all,rescue,n_bbs_wrong,2157,
+all,rescue,rescuable_share,0.6504,fallback exact / BBS wrong; PLAN.md guideline >= 0.15
+all,rescue,rescuable_share_ci95_low,0.6301,Wilson
+all,rescue,rescuable_share_ci95_high,0.6703,Wilson
+all,rescue,fallback_ed_better_on_bbs_wrong,2044,
+all,rescue,fallback_ed_same_on_bbs_wrong,86,
+all,rescue,fallback_ed_worse_on_bbs_wrong,27,
+all,rescue,bbs_exact_rate,0.763,
+all,rescue,oracle_exact_rate,0.9171,either engine exact: ceiling of any selector
+all,auroc,n_clusters,9100,clusters with BBS output; empty clusters excluded
+all,auroc,n_bbs_wrong,2157,
+all,auroc,confidence,0.9466,lower value = predicted failure
+all,auroc,confidence_ci95_low,0.9408,"bootstrap BCa, 2000 resamples"
+all,auroc,confidence_ci95_high,0.9525,
+all,auroc,path_weight,0.9458,lower value = predicted failure
+all,auroc,path_weight_ci95_low,0.9408,"bootstrap BCa, 2000 resamples"
+all,auroc,path_weight_ci95_high,0.9507,
+synthetic_e03_c05,two_by_two,bbs_right_fallback_right,669,
+synthetic_e03_c05,two_by_two,bbs_right_fallback_wrong,18,
+synthetic_e03_c05,two_by_two,bbs_wrong_fallback_right,11,
+synthetic_e03_c05,two_by_two,bbs_wrong_fallback_wrong,2,
+synthetic_e03_c05,two_by_two,n_empty_clusters,0,counted as wrong for both
+synthetic_e03_c05,rescue,n_bbs_wrong,13,
+synthetic_e03_c05,rescue,rescuable_share,0.8462,fallback exact / BBS wrong; PLAN.md guideline >= 0.15
+synthetic_e03_c05,rescue,rescuable_share_ci95_low,0.5777,Wilson
+synthetic_e03_c05,rescue,rescuable_share_ci95_high,0.9567,Wilson
+synthetic_e03_c05,rescue,fallback_ed_better_on_bbs_wrong,13,
+synthetic_e03_c05,rescue,fallback_ed_same_on_bbs_wrong,0,
+synthetic_e03_c05,rescue,fallback_ed_worse_on_bbs_wrong,0,
+synthetic_e03_c05,rescue,bbs_exact_rate,0.9814,
+synthetic_e03_c05,rescue,oracle_exact_rate,0.9971,either engine exact: ceiling of any selector
+synthetic_e03_c05,auroc,n_clusters,700,clusters with BBS output; empty clusters excluded
+synthetic_e03_c05,auroc,n_bbs_wrong,13,
+synthetic_e03_c05,auroc,confidence,0.9635,lower value = predicted failure
+synthetic_e03_c05,auroc,confidence_ci95_low,0.8983,"bootstrap BCa, 2000 resamples"
+synthetic_e03_c05,auroc,confidence_ci95_high,0.9851,
+synthetic_e03_c05,auroc,path_weight,0.8513,lower value = predicted failure
+synthetic_e03_c05,auroc,path_weight_ci95_low,0.7616,"bootstrap BCa, 2000 resamples"
+synthetic_e03_c05,auroc,path_weight_ci95_high,0.9182,
+synthetic_e03_c10,two_by_two,bbs_right_fallback_right,700,
+synthetic_e03_c10,two_by_two,bbs_right_fallback_wrong,0,
+synthetic_e03_c10,two_by_two,bbs_wrong_fallback_right,0,
+synthetic_e03_c10,two_by_two,bbs_wrong_fallback_wrong,0,
+synthetic_e03_c10,two_by_two,n_empty_clusters,0,counted as wrong for both
+synthetic_e03_c10,rescue,n_bbs_wrong,0,
+synthetic_e03_c10,rescue,rescuable_share,,fallback exact / BBS wrong; PLAN.md guideline >= 0.15
+synthetic_e03_c10,rescue,rescuable_share_ci95_low,,Wilson
+synthetic_e03_c10,rescue,rescuable_share_ci95_high,,Wilson
+synthetic_e03_c10,rescue,fallback_ed_better_on_bbs_wrong,0,
+synthetic_e03_c10,rescue,fallback_ed_same_on_bbs_wrong,0,
+synthetic_e03_c10,rescue,fallback_ed_worse_on_bbs_wrong,0,
+synthetic_e03_c10,rescue,bbs_exact_rate,1.0,
+synthetic_e03_c10,rescue,oracle_exact_rate,1.0,either engine exact: ceiling of any selector
+synthetic_e03_c10,auroc,n_clusters,700,clusters with BBS output; empty clusters excluded
+synthetic_e03_c10,auroc,n_bbs_wrong,0,
+synthetic_e03_c10,auroc,confidence,,not computed: fewer than 5 BBS failures
+synthetic_e03_c10,auroc,confidence_ci95_low,,not computed: fewer than 5 BBS failures
+synthetic_e03_c10,auroc,confidence_ci95_high,,not computed: fewer than 5 BBS failures
+synthetic_e03_c10,auroc,path_weight,,not computed: fewer than 5 BBS failures
+synthetic_e03_c10,auroc,path_weight_ci95_low,,not computed: fewer than 5 BBS failures
+synthetic_e03_c10,auroc,path_weight_ci95_high,,not computed: fewer than 5 BBS failures
+synthetic_e03_c20,two_by_two,bbs_right_fallback_right,700,
+synthetic_e03_c20,two_by_two,bbs_right_fallback_wrong,0,
+synthetic_e03_c20,two_by_two,bbs_wrong_fallback_right,0,
+synthetic_e03_c20,two_by_two,bbs_wrong_fallback_wrong,0,
+synthetic_e03_c20,two_by_two,n_empty_clusters,0,counted as wrong for both
+synthetic_e03_c20,rescue,n_bbs_wrong,0,
+synthetic_e03_c20,rescue,rescuable_share,,fallback exact / BBS wrong; PLAN.md guideline >= 0.15
+synthetic_e03_c20,rescue,rescuable_share_ci95_low,,Wilson
+synthetic_e03_c20,rescue,rescuable_share_ci95_high,,Wilson
+synthetic_e03_c20,rescue,fallback_ed_better_on_bbs_wrong,0,
+synthetic_e03_c20,rescue,fallback_ed_same_on_bbs_wrong,0,
+synthetic_e03_c20,rescue,fallback_ed_worse_on_bbs_wrong,0,
+synthetic_e03_c20,rescue,bbs_exact_rate,1.0,
+synthetic_e03_c20,rescue,oracle_exact_rate,1.0,either engine exact: ceiling of any selector
+synthetic_e03_c20,auroc,n_clusters,700,clusters with BBS output; empty clusters excluded
+synthetic_e03_c20,auroc,n_bbs_wrong,0,
+synthetic_e03_c20,auroc,confidence,,not computed: fewer than 5 BBS failures
+synthetic_e03_c20,auroc,confidence_ci95_low,,not computed: fewer than 5 BBS failures
+synthetic_e03_c20,auroc,confidence_ci95_high,,not computed: fewer than 5 BBS failures
+synthetic_e03_c20,auroc,path_weight,,not computed: fewer than 5 BBS failures
+synthetic_e03_c20,auroc,path_weight_ci95_low,,not computed: fewer than 5 BBS failures
+synthetic_e03_c20,auroc,path_weight_ci95_high,,not computed: fewer than 5 BBS failures
+synthetic_e06_c05,two_by_two,bbs_right_fallback_right,410,
+synthetic_e06_c05,two_by_two,bbs_right_fallback_wrong,51,
+synthetic_e06_c05,two_by_two,bbs_wrong_fallback_right,182,
+synthetic_e06_c05,two_by_two,bbs_wrong_fallback_wrong,57,
+synthetic_e06_c05,two_by_two,n_empty_clusters,0,counted as wrong for both
+synthetic_e06_c05,rescue,n_bbs_wrong,239,
+synthetic_e06_c05,rescue,rescuable_share,0.7615,fallback exact / BBS wrong; PLAN.md guideline >= 0.15
+synthetic_e06_c05,rescue,rescuable_share_ci95_low,0.7036,Wilson
+synthetic_e06_c05,rescue,rescuable_share_ci95_high,0.8111,Wilson
+synthetic_e06_c05,rescue,fallback_ed_better_on_bbs_wrong,217,
+synthetic_e06_c05,rescue,fallback_ed_same_on_bbs_wrong,21,
+synthetic_e06_c05,rescue,fallback_ed_worse_on_bbs_wrong,1,
+synthetic_e06_c05,rescue,bbs_exact_rate,0.6586,
+synthetic_e06_c05,rescue,oracle_exact_rate,0.9186,either engine exact: ceiling of any selector
+synthetic_e06_c05,auroc,n_clusters,700,clusters with BBS output; empty clusters excluded
+synthetic_e06_c05,auroc,n_bbs_wrong,239,
+synthetic_e06_c05,auroc,confidence,0.7947,lower value = predicted failure
+synthetic_e06_c05,auroc,confidence_ci95_low,0.7578,"bootstrap BCa, 2000 resamples"
+synthetic_e06_c05,auroc,confidence_ci95_high,0.8304,
+synthetic_e06_c05,auroc,path_weight,0.7397,lower value = predicted failure
+synthetic_e06_c05,auroc,path_weight_ci95_low,0.7005,"bootstrap BCa, 2000 resamples"
+synthetic_e06_c05,auroc,path_weight_ci95_high,0.7767,
+synthetic_e06_c10,two_by_two,bbs_right_fallback_right,694,
+synthetic_e06_c10,two_by_two,bbs_right_fallback_wrong,0,
+synthetic_e06_c10,two_by_two,bbs_wrong_fallback_right,6,
+synthetic_e06_c10,two_by_two,bbs_wrong_fallback_wrong,0,
+synthetic_e06_c10,two_by_two,n_empty_clusters,0,counted as wrong for both
+synthetic_e06_c10,rescue,n_bbs_wrong,6,
+synthetic_e06_c10,rescue,rescuable_share,1.0,fallback exact / BBS wrong; PLAN.md guideline >= 0.15
+synthetic_e06_c10,rescue,rescuable_share_ci95_low,0.6097,Wilson
+synthetic_e06_c10,rescue,rescuable_share_ci95_high,1.0,Wilson
+synthetic_e06_c10,rescue,fallback_ed_better_on_bbs_wrong,6,
+synthetic_e06_c10,rescue,fallback_ed_same_on_bbs_wrong,0,
+synthetic_e06_c10,rescue,fallback_ed_worse_on_bbs_wrong,0,
+synthetic_e06_c10,rescue,bbs_exact_rate,0.9914,
+synthetic_e06_c10,rescue,oracle_exact_rate,1.0,either engine exact: ceiling of any selector
+synthetic_e06_c10,auroc,n_clusters,700,clusters with BBS output; empty clusters excluded
+synthetic_e06_c10,auroc,n_bbs_wrong,6,
+synthetic_e06_c10,auroc,confidence,0.9539,lower value = predicted failure
+synthetic_e06_c10,auroc,confidence_ci95_low,,"bootstrap BCa, 2000 resamples"
+synthetic_e06_c10,auroc,confidence_ci95_high,,
+synthetic_e06_c10,auroc,path_weight,0.8463,lower value = predicted failure
+synthetic_e06_c10,auroc,path_weight_ci95_low,,"bootstrap BCa, 2000 resamples"
+synthetic_e06_c10,auroc,path_weight_ci95_high,,
+synthetic_e06_c10_hp50,two_by_two,bbs_right_fallback_right,425,
+synthetic_e06_c10_hp50,two_by_two,bbs_right_fallback_wrong,177,
+synthetic_e06_c10_hp50,two_by_two,bbs_wrong_fallback_right,9,
+synthetic_e06_c10_hp50,two_by_two,bbs_wrong_fallback_wrong,89,
+synthetic_e06_c10_hp50,two_by_two,n_empty_clusters,0,counted as wrong for both
+synthetic_e06_c10_hp50,rescue,n_bbs_wrong,98,
+synthetic_e06_c10_hp50,rescue,rescuable_share,0.0918,fallback exact / BBS wrong; PLAN.md guideline >= 0.15
+synthetic_e06_c10_hp50,rescue,rescuable_share_ci95_low,0.0491,Wilson
+synthetic_e06_c10_hp50,rescue,rescuable_share_ci95_high,0.1654,Wilson
+synthetic_e06_c10_hp50,rescue,fallback_ed_better_on_bbs_wrong,67,
+synthetic_e06_c10_hp50,rescue,fallback_ed_same_on_bbs_wrong,20,
+synthetic_e06_c10_hp50,rescue,fallback_ed_worse_on_bbs_wrong,11,
+synthetic_e06_c10_hp50,rescue,bbs_exact_rate,0.86,
+synthetic_e06_c10_hp50,rescue,oracle_exact_rate,0.8729,either engine exact: ceiling of any selector
+synthetic_e06_c10_hp50,auroc,n_clusters,700,clusters with BBS output; empty clusters excluded
+synthetic_e06_c10_hp50,auroc,n_bbs_wrong,98,
+synthetic_e06_c10_hp50,auroc,confidence,0.8582,lower value = predicted failure
+synthetic_e06_c10_hp50,auroc,confidence_ci95_low,0.7998,"bootstrap BCa, 2000 resamples"
+synthetic_e06_c10_hp50,auroc,confidence_ci95_high,0.9003,
+synthetic_e06_c10_hp50,auroc,path_weight,0.7258,lower value = predicted failure
+synthetic_e06_c10_hp50,auroc,path_weight_ci95_low,0.6697,"bootstrap BCa, 2000 resamples"
+synthetic_e06_c10_hp50,auroc,path_weight_ci95_high,0.7771,
+synthetic_e06_c20,two_by_two,bbs_right_fallback_right,700,
+synthetic_e06_c20,two_by_two,bbs_right_fallback_wrong,0,
+synthetic_e06_c20,two_by_two,bbs_wrong_fallback_right,0,
+synthetic_e06_c20,two_by_two,bbs_wrong_fallback_wrong,0,
+synthetic_e06_c20,two_by_two,n_empty_clusters,0,counted as wrong for both
+synthetic_e06_c20,rescue,n_bbs_wrong,0,
+synthetic_e06_c20,rescue,rescuable_share,,fallback exact / BBS wrong; PLAN.md guideline >= 0.15
+synthetic_e06_c20,rescue,rescuable_share_ci95_low,,Wilson
+synthetic_e06_c20,rescue,rescuable_share_ci95_high,,Wilson
+synthetic_e06_c20,rescue,fallback_ed_better_on_bbs_wrong,0,
+synthetic_e06_c20,rescue,fallback_ed_same_on_bbs_wrong,0,
+synthetic_e06_c20,rescue,fallback_ed_worse_on_bbs_wrong,0,
+synthetic_e06_c20,rescue,bbs_exact_rate,1.0,
+synthetic_e06_c20,rescue,oracle_exact_rate,1.0,either engine exact: ceiling of any selector
+synthetic_e06_c20,auroc,n_clusters,700,clusters with BBS output; empty clusters excluded
+synthetic_e06_c20,auroc,n_bbs_wrong,0,
+synthetic_e06_c20,auroc,confidence,,not computed: fewer than 5 BBS failures
+synthetic_e06_c20,auroc,confidence_ci95_low,,not computed: fewer than 5 BBS failures
+synthetic_e06_c20,auroc,confidence_ci95_high,,not computed: fewer than 5 BBS failures
+synthetic_e06_c20,auroc,path_weight,,not computed: fewer than 5 BBS failures
+synthetic_e06_c20,auroc,path_weight_ci95_low,,not computed: fewer than 5 BBS failures
+synthetic_e06_c20,auroc,path_weight_ci95_high,,not computed: fewer than 5 BBS failures
+synthetic_e09_c05,two_by_two,bbs_right_fallback_right,96,
+synthetic_e09_c05,two_by_two,bbs_right_fallback_wrong,22,
+synthetic_e09_c05,two_by_two,bbs_wrong_fallback_right,386,
+synthetic_e09_c05,two_by_two,bbs_wrong_fallback_wrong,196,
+synthetic_e09_c05,two_by_two,n_empty_clusters,0,counted as wrong for both
+synthetic_e09_c05,rescue,n_bbs_wrong,582,
+synthetic_e09_c05,rescue,rescuable_share,0.6632,fallback exact / BBS wrong; PLAN.md guideline >= 0.15
+synthetic_e09_c05,rescue,rescuable_share_ci95_low,0.6239,Wilson
+synthetic_e09_c05,rescue,rescuable_share_ci95_high,0.7004,Wilson
+synthetic_e09_c05,rescue,fallback_ed_better_on_bbs_wrong,553,
+synthetic_e09_c05,rescue,fallback_ed_same_on_bbs_wrong,22,
+synthetic_e09_c05,rescue,fallback_ed_worse_on_bbs_wrong,7,
+synthetic_e09_c05,rescue,bbs_exact_rate,0.1686,
+synthetic_e09_c05,rescue,oracle_exact_rate,0.72,either engine exact: ceiling of any selector
+synthetic_e09_c05,auroc,n_clusters,700,clusters with BBS output; empty clusters excluded
+synthetic_e09_c05,auroc,n_bbs_wrong,582,
+synthetic_e09_c05,auroc,confidence,0.7028,lower value = predicted failure
+synthetic_e09_c05,auroc,confidence_ci95_low,0.6526,"bootstrap BCa, 2000 resamples"
+synthetic_e09_c05,auroc,confidence_ci95_high,0.7508,
+synthetic_e09_c05,auroc,path_weight,0.7462,lower value = predicted failure
+synthetic_e09_c05,auroc,path_weight_ci95_low,0.6982,"bootstrap BCa, 2000 resamples"
+synthetic_e09_c05,auroc,path_weight_ci95_high,0.787,
+synthetic_e09_c10,two_by_two,bbs_right_fallback_right,579,
+synthetic_e09_c10,two_by_two,bbs_right_fallback_wrong,1,
+synthetic_e09_c10,two_by_two,bbs_wrong_fallback_right,119,
+synthetic_e09_c10,two_by_two,bbs_wrong_fallback_wrong,1,
+synthetic_e09_c10,two_by_two,n_empty_clusters,0,counted as wrong for both
+synthetic_e09_c10,rescue,n_bbs_wrong,120,
+synthetic_e09_c10,rescue,rescuable_share,0.9917,fallback exact / BBS wrong; PLAN.md guideline >= 0.15
+synthetic_e09_c10,rescue,rescuable_share_ci95_low,0.9543,Wilson
+synthetic_e09_c10,rescue,rescuable_share_ci95_high,0.9985,Wilson
+synthetic_e09_c10,rescue,fallback_ed_better_on_bbs_wrong,120,
+synthetic_e09_c10,rescue,fallback_ed_same_on_bbs_wrong,0,
+synthetic_e09_c10,rescue,fallback_ed_worse_on_bbs_wrong,0,
+synthetic_e09_c10,rescue,bbs_exact_rate,0.8286,
+synthetic_e09_c10,rescue,oracle_exact_rate,0.9986,either engine exact: ceiling of any selector
+synthetic_e09_c10,auroc,n_clusters,700,clusters with BBS output; empty clusters excluded
+synthetic_e09_c10,auroc,n_bbs_wrong,120,
+synthetic_e09_c10,auroc,confidence,0.8971,lower value = predicted failure
+synthetic_e09_c10,auroc,confidence_ci95_low,0.8612,"bootstrap BCa, 2000 resamples"
+synthetic_e09_c10,auroc,confidence_ci95_high,0.925,
+synthetic_e09_c10,auroc,path_weight,0.7931,lower value = predicted failure
+synthetic_e09_c10,auroc,path_weight_ci95_low,0.7411,"bootstrap BCa, 2000 resamples"
+synthetic_e09_c10,auroc,path_weight_ci95_high,0.8345,
+synthetic_e09_c20,two_by_two,bbs_right_fallback_right,700,
+synthetic_e09_c20,two_by_two,bbs_right_fallback_wrong,0,
+synthetic_e09_c20,two_by_two,bbs_wrong_fallback_right,0,
+synthetic_e09_c20,two_by_two,bbs_wrong_fallback_wrong,0,
+synthetic_e09_c20,two_by_two,n_empty_clusters,0,counted as wrong for both
+synthetic_e09_c20,rescue,n_bbs_wrong,0,
+synthetic_e09_c20,rescue,rescuable_share,,fallback exact / BBS wrong; PLAN.md guideline >= 0.15
+synthetic_e09_c20,rescue,rescuable_share_ci95_low,,Wilson
+synthetic_e09_c20,rescue,rescuable_share_ci95_high,,Wilson
+synthetic_e09_c20,rescue,fallback_ed_better_on_bbs_wrong,0,
+synthetic_e09_c20,rescue,fallback_ed_same_on_bbs_wrong,0,
+synthetic_e09_c20,rescue,fallback_ed_worse_on_bbs_wrong,0,
+synthetic_e09_c20,rescue,bbs_exact_rate,1.0,
+synthetic_e09_c20,rescue,oracle_exact_rate,1.0,either engine exact: ceiling of any selector
+synthetic_e09_c20,auroc,n_clusters,700,clusters with BBS output; empty clusters excluded
+synthetic_e09_c20,auroc,n_bbs_wrong,0,
+synthetic_e09_c20,auroc,confidence,,not computed: fewer than 5 BBS failures
+synthetic_e09_c20,auroc,confidence_ci95_low,,not computed: fewer than 5 BBS failures
+synthetic_e09_c20,auroc,confidence_ci95_high,,not computed: fewer than 5 BBS failures
+synthetic_e09_c20,auroc,path_weight,,not computed: fewer than 5 BBS failures
+synthetic_e09_c20,auroc,path_weight_ci95_low,,not computed: fewer than 5 BBS failures
+synthetic_e09_c20,auroc,path_weight_ci95_high,,not computed: fewer than 5 BBS failures
+synthetic_e12_c05,two_by_two,bbs_right_fallback_right,11,
+synthetic_e12_c05,two_by_two,bbs_right_fallback_wrong,6,
+synthetic_e12_c05,two_by_two,bbs_wrong_fallback_right,283,
+synthetic_e12_c05,two_by_two,bbs_wrong_fallback_wrong,400,
+synthetic_e12_c05,two_by_two,n_empty_clusters,0,counted as wrong for both
+synthetic_e12_c05,rescue,n_bbs_wrong,683,
+synthetic_e12_c05,rescue,rescuable_share,0.4143,fallback exact / BBS wrong; PLAN.md guideline >= 0.15
+synthetic_e12_c05,rescue,rescuable_share_ci95_low,0.378,Wilson
+synthetic_e12_c05,rescue,rescuable_share_ci95_high,0.4517,Wilson
+synthetic_e12_c05,rescue,fallback_ed_better_on_bbs_wrong,655,
+synthetic_e12_c05,rescue,fallback_ed_same_on_bbs_wrong,21,
+synthetic_e12_c05,rescue,fallback_ed_worse_on_bbs_wrong,7,
+synthetic_e12_c05,rescue,bbs_exact_rate,0.0243,
+synthetic_e12_c05,rescue,oracle_exact_rate,0.4286,either engine exact: ceiling of any selector
+synthetic_e12_c05,auroc,n_clusters,700,clusters with BBS output; empty clusters excluded
+synthetic_e12_c05,auroc,n_bbs_wrong,683,
+synthetic_e12_c05,auroc,confidence,0.6034,lower value = predicted failure
+synthetic_e12_c05,auroc,confidence_ci95_low,0.4712,"bootstrap BCa, 2000 resamples"
+synthetic_e12_c05,auroc,confidence_ci95_high,0.7298,
+synthetic_e12_c05,auroc,path_weight,0.7312,lower value = predicted failure
+synthetic_e12_c05,auroc,path_weight_ci95_low,0.6111,"bootstrap BCa, 2000 resamples"
+synthetic_e12_c05,auroc,path_weight_ci95_high,0.8012,
+synthetic_e12_c10,two_by_two,bbs_right_fallback_right,307,
+synthetic_e12_c10,two_by_two,bbs_right_fallback_wrong,1,
+synthetic_e12_c10,two_by_two,bbs_wrong_fallback_right,383,
+synthetic_e12_c10,two_by_two,bbs_wrong_fallback_wrong,9,
+synthetic_e12_c10,two_by_two,n_empty_clusters,0,counted as wrong for both
+synthetic_e12_c10,rescue,n_bbs_wrong,392,
+synthetic_e12_c10,rescue,rescuable_share,0.977,fallback exact / BBS wrong; PLAN.md guideline >= 0.15
+synthetic_e12_c10,rescue,rescuable_share_ci95_low,0.9569,Wilson
+synthetic_e12_c10,rescue,rescuable_share_ci95_high,0.9879,Wilson
+synthetic_e12_c10,rescue,fallback_ed_better_on_bbs_wrong,389,
+synthetic_e12_c10,rescue,fallback_ed_same_on_bbs_wrong,2,
+synthetic_e12_c10,rescue,fallback_ed_worse_on_bbs_wrong,1,
+synthetic_e12_c10,rescue,bbs_exact_rate,0.44,
+synthetic_e12_c10,rescue,oracle_exact_rate,0.9871,either engine exact: ceiling of any selector
+synthetic_e12_c10,auroc,n_clusters,700,clusters with BBS output; empty clusters excluded
+synthetic_e12_c10,auroc,n_bbs_wrong,392,
+synthetic_e12_c10,auroc,confidence,0.7775,lower value = predicted failure
+synthetic_e12_c10,auroc,confidence_ci95_low,0.7425,"bootstrap BCa, 2000 resamples"
+synthetic_e12_c10,auroc,confidence_ci95_high,0.8091,
+synthetic_e12_c10,auroc,path_weight,0.7239,lower value = predicted failure
+synthetic_e12_c10,auroc,path_weight_ci95_low,0.6824,"bootstrap BCa, 2000 resamples"
+synthetic_e12_c10,auroc,path_weight_ci95_high,0.7601,
+synthetic_e12_c20,two_by_two,bbs_right_fallback_right,676,
+synthetic_e12_c20,two_by_two,bbs_right_fallback_wrong,0,
+synthetic_e12_c20,two_by_two,bbs_wrong_fallback_right,24,
+synthetic_e12_c20,two_by_two,bbs_wrong_fallback_wrong,0,
+synthetic_e12_c20,two_by_two,n_empty_clusters,0,counted as wrong for both
+synthetic_e12_c20,rescue,n_bbs_wrong,24,
+synthetic_e12_c20,rescue,rescuable_share,1.0,fallback exact / BBS wrong; PLAN.md guideline >= 0.15
+synthetic_e12_c20,rescue,rescuable_share_ci95_low,0.862,Wilson
+synthetic_e12_c20,rescue,rescuable_share_ci95_high,1.0,Wilson
+synthetic_e12_c20,rescue,fallback_ed_better_on_bbs_wrong,24,
+synthetic_e12_c20,rescue,fallback_ed_same_on_bbs_wrong,0,
+synthetic_e12_c20,rescue,fallback_ed_worse_on_bbs_wrong,0,
+synthetic_e12_c20,rescue,bbs_exact_rate,0.9657,
+synthetic_e12_c20,rescue,oracle_exact_rate,1.0,either engine exact: ceiling of any selector
+synthetic_e12_c20,auroc,n_clusters,700,clusters with BBS output; empty clusters excluded
+synthetic_e12_c20,auroc,n_bbs_wrong,24,
+synthetic_e12_c20,auroc,confidence,0.9357,lower value = predicted failure
+synthetic_e12_c20,auroc,confidence_ci95_low,0.8092,"bootstrap BCa, 2000 resamples"
+synthetic_e12_c20,auroc,confidence_ci95_high,0.9758,
+synthetic_e12_c20,auroc,path_weight,0.8751,lower value = predicted failure
+synthetic_e12_c20,auroc,path_weight_ci95_low,0.7815,"bootstrap BCa, 2000 resamples"
+synthetic_e12_c20,auroc,path_weight_ci95_high,0.928,
+all,runs,bbs_run,synthetic_test_bbs-20261002-142420-r1,
+all,runs,fallback_run,synthetic_test_itr-20261002-161609-r1,itr_only
+all,runs,split,test,

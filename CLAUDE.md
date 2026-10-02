@@ -204,8 +204,15 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
   `final_synthetic_test_adaptive_lengthcheck-20261002-232904-r1` (τ 0.99, 5,472 routed).
   These live runs are the headline test results; cache-derived numbers must match them.
   Not timing results. Log `results/final_test.log`.
-  **Next (Week 3):** test-set analysis, full scaling campaign (`configs/final/scaling.yaml`,
-  overnight, idle laptop, timing protocol), figures.
+- 3 Oct 2026, Week 3 item 2 done: test analysis (plan committed first, `0caebcb`; code
+  `30778bf`; `analysis/final_results.py configs/final/test_report.yaml`, test cascade configs;
+  results `docs/pilot_notes.md` Day 10). Live = cache on every exact outcome. Test exact:
+  Microsoft BBS = adaptive 95.53%, ITR 87.27%; synthetic BBS 76.30%, ITR 88.68%, adaptive
+  **88.85%** (31% routed), length check **91.25%** (60% routed); all within ~0.5 pt of dev.
+  hp50: primary cascade harms (78.4 vs 86.0), length check fixes it (86.9). AUROC Microsoft
+  0.933, synthetic 0.947. Post hoc only: Microsoft length check τ 0.7–0.9 is +0.2 pt.
+  **Next (Week 3):** full scaling campaign (`configs/final/scaling.yaml`, overnight, idle
+  laptop, timing protocol), figures, writing brief update.
 - Sanity targets **verified** in the BBS paper (iScience 2025, Table 2, "Srinivasavaradhan
   et al." = Microsoft CNR, all 10,000 clusters, default parameters, beam 20): success rate
   (exact match) BBS 94.77%, ITR 87.58%, CPL 94.93%; ITR took 7,352 s (~0.74 s/cluster, i9-13900H).

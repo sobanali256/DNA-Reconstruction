@@ -1,0 +1,517 @@
+dataset_id,section,metric,value,note
+all,background,share_truth_positions_in_long_runs,0.0495,runs >= 4 equal bases
+all,both_right,n_clusters,6667,
+all,both_right,coverage_median,10.0,
+all,both_right,itr_edit_distance_median,0.0,
+all,both_right,itr_length_wrong_share,0.0,label-free: length != designed
+all,both_right,itr_one_base_short,0,
+all,both_right,itr_errors_substitution,0,
+all,both_right,itr_errors_deletion,0,
+all,both_right,itr_errors_insertion,0,
+all,both_right,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+all,both_wrong,n_clusters,754,
+all,both_wrong,coverage_median,5.0,
+all,both_wrong,itr_edit_distance_median,1.0,
+all,both_wrong,itr_length_wrong_share,0.5756,label-free: length != designed
+all,both_wrong,itr_one_base_short,77,
+all,both_wrong,itr_errors_substitution,224,
+all,both_wrong,itr_errors_deletion,398,
+all,both_wrong,itr_errors_insertion,746,
+all,both_wrong,itr_errors_in_long_runs_share,0.1323,truth homopolymer >= 4
+all,harmed,n_clusters,276,
+all,harmed,coverage_median,10.0,
+all,harmed,itr_edit_distance_median,1.0,
+all,harmed,itr_length_wrong_share,0.9275,label-free: length != designed
+all,harmed,itr_one_base_short,153,
+all,harmed,itr_errors_substitution,15,
+all,harmed,itr_errors_deletion,216,
+all,harmed,itr_errors_insertion,92,
+all,harmed,itr_errors_in_long_runs_share,0.6656,truth homopolymer >= 4
+all,rescued,n_clusters,1403,
+all,rescued,coverage_median,5.0,
+all,rescued,itr_edit_distance_median,0.0,
+all,rescued,itr_length_wrong_share,0.0,label-free: length != designed
+all,rescued,itr_one_base_short,0,
+all,rescued,itr_errors_substitution,0,
+all,rescued,itr_errors_deletion,0,
+all,rescued,itr_errors_insertion,0,
+all,rescued,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+all,reads_harmed,n_clusters,149,harmed: ITR's only error is one deletion in a long run
+all,reads_harmed,share_reads_run_shortened,0.6799,
+all,reads_harmed,share_reads_run_correct,0.3121,
+all,reads_harmed,share_reads_run_lengthened,0.0081,
+all,reads_harmed,share_clusters_majority_shortened,0.9866,
+all,reads_both_right,n_clusters,4826,first long run of the strand
+all,reads_both_right,share_reads_run_shortened,0.1792,
+all,reads_both_right,share_reads_run_correct,0.8013,
+all,reads_both_right,share_reads_run_lengthened,0.0195,
+all,reads_both_right,share_clusters_majority_shortened,0.0191,
+synthetic_e03_c05,background,share_truth_positions_in_long_runs,0.0491,runs >= 4 equal bases
+synthetic_e03_c05,both_right,n_clusters,669,
+synthetic_e03_c05,both_right,coverage_median,5.0,
+synthetic_e03_c05,both_right,itr_edit_distance_median,0.0,
+synthetic_e03_c05,both_right,itr_length_wrong_share,0.0,label-free: length != designed
+synthetic_e03_c05,both_right,itr_one_base_short,0,
+synthetic_e03_c05,both_right,itr_errors_substitution,0,
+synthetic_e03_c05,both_right,itr_errors_deletion,0,
+synthetic_e03_c05,both_right,itr_errors_insertion,0,
+synthetic_e03_c05,both_right,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+synthetic_e03_c05,both_wrong,n_clusters,2,
+synthetic_e03_c05,both_wrong,coverage_median,5.0,
+synthetic_e03_c05,both_wrong,itr_edit_distance_median,1.0,
+synthetic_e03_c05,both_wrong,itr_length_wrong_share,1.0,label-free: length != designed
+synthetic_e03_c05,both_wrong,itr_one_base_short,1,
+synthetic_e03_c05,both_wrong,itr_errors_substitution,0,
+synthetic_e03_c05,both_wrong,itr_errors_deletion,1,
+synthetic_e03_c05,both_wrong,itr_errors_insertion,1,
+synthetic_e03_c05,both_wrong,itr_errors_in_long_runs_share,0.0,truth homopolymer >= 4
+synthetic_e03_c05,harmed,n_clusters,18,
+synthetic_e03_c05,harmed,coverage_median,5.0,
+synthetic_e03_c05,harmed,itr_edit_distance_median,1.0,
+synthetic_e03_c05,harmed,itr_length_wrong_share,0.9444,label-free: length != designed
+synthetic_e03_c05,harmed,itr_one_base_short,0,
+synthetic_e03_c05,harmed,itr_errors_substitution,1,
+synthetic_e03_c05,harmed,itr_errors_deletion,0,
+synthetic_e03_c05,harmed,itr_errors_insertion,18,
+synthetic_e03_c05,harmed,itr_errors_in_long_runs_share,0.0526,truth homopolymer >= 4
+synthetic_e03_c05,rescued,n_clusters,11,
+synthetic_e03_c05,rescued,coverage_median,5.0,
+synthetic_e03_c05,rescued,itr_edit_distance_median,0.0,
+synthetic_e03_c05,rescued,itr_length_wrong_share,0.0,label-free: length != designed
+synthetic_e03_c05,rescued,itr_one_base_short,0,
+synthetic_e03_c05,rescued,itr_errors_substitution,0,
+synthetic_e03_c05,rescued,itr_errors_deletion,0,
+synthetic_e03_c05,rescued,itr_errors_insertion,0,
+synthetic_e03_c05,rescued,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+synthetic_e03_c05,reads_harmed,n_clusters,0,harmed: ITR's only error is one deletion in a long run
+synthetic_e03_c05,reads_harmed,share_reads_run_shortened,,
+synthetic_e03_c05,reads_harmed,share_reads_run_correct,,
+synthetic_e03_c05,reads_harmed,share_reads_run_lengthened,,
+synthetic_e03_c05,reads_harmed,share_clusters_majority_shortened,,
+synthetic_e03_c05,reads_both_right,n_clusters,496,first long run of the strand
+synthetic_e03_c05,reads_both_right,share_reads_run_shortened,0.0827,
+synthetic_e03_c05,reads_both_right,share_reads_run_correct,0.9065,
+synthetic_e03_c05,reads_both_right,share_reads_run_lengthened,0.0109,
+synthetic_e03_c05,reads_both_right,share_clusters_majority_shortened,0.006,
+synthetic_e03_c10,background,share_truth_positions_in_long_runs,0.0475,runs >= 4 equal bases
+synthetic_e03_c10,both_right,n_clusters,700,
+synthetic_e03_c10,both_right,coverage_median,10.0,
+synthetic_e03_c10,both_right,itr_edit_distance_median,0.0,
+synthetic_e03_c10,both_right,itr_length_wrong_share,0.0,label-free: length != designed
+synthetic_e03_c10,both_right,itr_one_base_short,0,
+synthetic_e03_c10,both_right,itr_errors_substitution,0,
+synthetic_e03_c10,both_right,itr_errors_deletion,0,
+synthetic_e03_c10,both_right,itr_errors_insertion,0,
+synthetic_e03_c10,both_right,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+synthetic_e03_c10,reads_harmed,n_clusters,0,harmed: ITR's only error is one deletion in a long run
+synthetic_e03_c10,reads_harmed,share_reads_run_shortened,,
+synthetic_e03_c10,reads_harmed,share_reads_run_correct,,
+synthetic_e03_c10,reads_harmed,share_reads_run_lengthened,,
+synthetic_e03_c10,reads_harmed,share_clusters_majority_shortened,,
+synthetic_e03_c10,reads_both_right,n_clusters,503,first long run of the strand
+synthetic_e03_c10,reads_both_right,share_reads_run_shortened,0.0833,
+synthetic_e03_c10,reads_both_right,share_reads_run_correct,0.9046,
+synthetic_e03_c10,reads_both_right,share_reads_run_lengthened,0.0121,
+synthetic_e03_c10,reads_both_right,share_clusters_majority_shortened,0.0,
+synthetic_e03_c20,background,share_truth_positions_in_long_runs,0.0499,runs >= 4 equal bases
+synthetic_e03_c20,both_right,n_clusters,700,
+synthetic_e03_c20,both_right,coverage_median,20.0,
+synthetic_e03_c20,both_right,itr_edit_distance_median,0.0,
+synthetic_e03_c20,both_right,itr_length_wrong_share,0.0,label-free: length != designed
+synthetic_e03_c20,both_right,itr_one_base_short,0,
+synthetic_e03_c20,both_right,itr_errors_substitution,0,
+synthetic_e03_c20,both_right,itr_errors_deletion,0,
+synthetic_e03_c20,both_right,itr_errors_insertion,0,
+synthetic_e03_c20,both_right,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+synthetic_e03_c20,reads_harmed,n_clusters,0,harmed: ITR's only error is one deletion in a long run
+synthetic_e03_c20,reads_harmed,share_reads_run_shortened,,
+synthetic_e03_c20,reads_harmed,share_reads_run_correct,,
+synthetic_e03_c20,reads_harmed,share_reads_run_lengthened,,
+synthetic_e03_c20,reads_harmed,share_clusters_majority_shortened,,
+synthetic_e03_c20,reads_both_right,n_clusters,514,first long run of the strand
+synthetic_e03_c20,reads_both_right,share_reads_run_shortened,0.0865,
+synthetic_e03_c20,reads_both_right,share_reads_run_correct,0.9015,
+synthetic_e03_c20,reads_both_right,share_reads_run_lengthened,0.0121,
+synthetic_e03_c20,reads_both_right,share_clusters_majority_shortened,0.0,
+synthetic_e06_c05,background,share_truth_positions_in_long_runs,0.0511,runs >= 4 equal bases
+synthetic_e06_c05,both_right,n_clusters,410,
+synthetic_e06_c05,both_right,coverage_median,5.0,
+synthetic_e06_c05,both_right,itr_edit_distance_median,0.0,
+synthetic_e06_c05,both_right,itr_length_wrong_share,0.0,label-free: length != designed
+synthetic_e06_c05,both_right,itr_one_base_short,0,
+synthetic_e06_c05,both_right,itr_errors_substitution,0,
+synthetic_e06_c05,both_right,itr_errors_deletion,0,
+synthetic_e06_c05,both_right,itr_errors_insertion,0,
+synthetic_e06_c05,both_right,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+synthetic_e06_c05,both_wrong,n_clusters,57,
+synthetic_e06_c05,both_wrong,coverage_median,5.0,
+synthetic_e06_c05,both_wrong,itr_edit_distance_median,1.0,
+synthetic_e06_c05,both_wrong,itr_length_wrong_share,0.6491,label-free: length != designed
+synthetic_e06_c05,both_wrong,itr_one_base_short,1,
+synthetic_e06_c05,both_wrong,itr_errors_substitution,11,
+synthetic_e06_c05,both_wrong,itr_errors_deletion,10,
+synthetic_e06_c05,both_wrong,itr_errors_insertion,47,
+synthetic_e06_c05,both_wrong,itr_errors_in_long_runs_share,0.0588,truth homopolymer >= 4
+synthetic_e06_c05,harmed,n_clusters,51,
+synthetic_e06_c05,harmed,coverage_median,5.0,
+synthetic_e06_c05,harmed,itr_edit_distance_median,1.0,
+synthetic_e06_c05,harmed,itr_length_wrong_share,0.8431,label-free: length != designed
+synthetic_e06_c05,harmed,itr_one_base_short,0,
+synthetic_e06_c05,harmed,itr_errors_substitution,6,
+synthetic_e06_c05,harmed,itr_errors_deletion,3,
+synthetic_e06_c05,harmed,itr_errors_insertion,46,
+synthetic_e06_c05,harmed,itr_errors_in_long_runs_share,0.0364,truth homopolymer >= 4
+synthetic_e06_c05,rescued,n_clusters,182,
+synthetic_e06_c05,rescued,coverage_median,5.0,
+synthetic_e06_c05,rescued,itr_edit_distance_median,0.0,
+synthetic_e06_c05,rescued,itr_length_wrong_share,0.0,label-free: length != designed
+synthetic_e06_c05,rescued,itr_one_base_short,0,
+synthetic_e06_c05,rescued,itr_errors_substitution,0,
+synthetic_e06_c05,rescued,itr_errors_deletion,0,
+synthetic_e06_c05,rescued,itr_errors_insertion,0,
+synthetic_e06_c05,rescued,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+synthetic_e06_c05,reads_harmed,n_clusters,0,harmed: ITR's only error is one deletion in a long run
+synthetic_e06_c05,reads_harmed,share_reads_run_shortened,,
+synthetic_e06_c05,reads_harmed,share_reads_run_correct,,
+synthetic_e06_c05,reads_harmed,share_reads_run_lengthened,,
+synthetic_e06_c05,reads_harmed,share_clusters_majority_shortened,,
+synthetic_e06_c05,reads_both_right,n_clusters,307,first long run of the strand
+synthetic_e06_c05,reads_both_right,share_reads_run_shortened,0.1414,
+synthetic_e06_c05,reads_both_right,share_reads_run_correct,0.8443,
+synthetic_e06_c05,reads_both_right,share_reads_run_lengthened,0.0143,
+synthetic_e06_c05,reads_both_right,share_clusters_majority_shortened,0.0163,
+synthetic_e06_c10,background,share_truth_positions_in_long_runs,0.0501,runs >= 4 equal bases
+synthetic_e06_c10,both_right,n_clusters,694,
+synthetic_e06_c10,both_right,coverage_median,10.0,
+synthetic_e06_c10,both_right,itr_edit_distance_median,0.0,
+synthetic_e06_c10,both_right,itr_length_wrong_share,0.0,label-free: length != designed
+synthetic_e06_c10,both_right,itr_one_base_short,0,
+synthetic_e06_c10,both_right,itr_errors_substitution,0,
+synthetic_e06_c10,both_right,itr_errors_deletion,0,
+synthetic_e06_c10,both_right,itr_errors_insertion,0,
+synthetic_e06_c10,both_right,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+synthetic_e06_c10,rescued,n_clusters,6,
+synthetic_e06_c10,rescued,coverage_median,10.0,
+synthetic_e06_c10,rescued,itr_edit_distance_median,0.0,
+synthetic_e06_c10,rescued,itr_length_wrong_share,0.0,label-free: length != designed
+synthetic_e06_c10,rescued,itr_one_base_short,0,
+synthetic_e06_c10,rescued,itr_errors_substitution,0,
+synthetic_e06_c10,rescued,itr_errors_deletion,0,
+synthetic_e06_c10,rescued,itr_errors_insertion,0,
+synthetic_e06_c10,rescued,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+synthetic_e06_c10,reads_harmed,n_clusters,0,harmed: ITR's only error is one deletion in a long run
+synthetic_e06_c10,reads_harmed,share_reads_run_shortened,,
+synthetic_e06_c10,reads_harmed,share_reads_run_correct,,
+synthetic_e06_c10,reads_harmed,share_reads_run_lengthened,,
+synthetic_e06_c10,reads_harmed,share_clusters_majority_shortened,,
+synthetic_e06_c10,reads_both_right,n_clusters,517,first long run of the strand
+synthetic_e06_c10,reads_both_right,share_reads_run_shortened,0.1561,
+synthetic_e06_c10,reads_both_right,share_reads_run_correct,0.8253,
+synthetic_e06_c10,reads_both_right,share_reads_run_lengthened,0.0186,
+synthetic_e06_c10,reads_both_right,share_clusters_majority_shortened,0.0039,
+synthetic_e06_c10_hp50,background,share_truth_positions_in_long_runs,0.0508,runs >= 4 equal bases
+synthetic_e06_c10_hp50,both_right,n_clusters,425,
+synthetic_e06_c10_hp50,both_right,coverage_median,10.0,
+synthetic_e06_c10_hp50,both_right,itr_edit_distance_median,0.0,
+synthetic_e06_c10_hp50,both_right,itr_length_wrong_share,0.0,label-free: length != designed
+synthetic_e06_c10_hp50,both_right,itr_one_base_short,0,
+synthetic_e06_c10_hp50,both_right,itr_errors_substitution,0,
+synthetic_e06_c10_hp50,both_right,itr_errors_deletion,0,
+synthetic_e06_c10_hp50,both_right,itr_errors_insertion,0,
+synthetic_e06_c10_hp50,both_right,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+synthetic_e06_c10_hp50,both_wrong,n_clusters,89,
+synthetic_e06_c10_hp50,both_wrong,coverage_median,10.0,
+synthetic_e06_c10_hp50,both_wrong,itr_edit_distance_median,1.0,
+synthetic_e06_c10_hp50,both_wrong,itr_length_wrong_share,1.0,label-free: length != designed
+synthetic_e06_c10_hp50,both_wrong,itr_one_base_short,67,
+synthetic_e06_c10_hp50,both_wrong,itr_errors_substitution,0,
+synthetic_e06_c10_hp50,both_wrong,itr_errors_deletion,120,
+synthetic_e06_c10_hp50,both_wrong,itr_errors_insertion,1,
+synthetic_e06_c10_hp50,both_wrong,itr_errors_in_long_runs_share,0.9917,truth homopolymer >= 4
+synthetic_e06_c10_hp50,harmed,n_clusters,177,
+synthetic_e06_c10_hp50,harmed,coverage_median,10.0,
+synthetic_e06_c10_hp50,harmed,itr_edit_distance_median,1.0,
+synthetic_e06_c10_hp50,harmed,itr_length_wrong_share,0.9887,label-free: length != designed
+synthetic_e06_c10_hp50,harmed,itr_one_base_short,152,
+synthetic_e06_c10_hp50,harmed,itr_errors_substitution,2,
+synthetic_e06_c10_hp50,harmed,itr_errors_deletion,208,
+synthetic_e06_c10_hp50,harmed,itr_errors_insertion,4,
+synthetic_e06_c10_hp50,harmed,itr_errors_in_long_runs_share,0.986,truth homopolymer >= 4
+synthetic_e06_c10_hp50,rescued,n_clusters,9,
+synthetic_e06_c10_hp50,rescued,coverage_median,10.0,
+synthetic_e06_c10_hp50,rescued,itr_edit_distance_median,0.0,
+synthetic_e06_c10_hp50,rescued,itr_length_wrong_share,0.0,label-free: length != designed
+synthetic_e06_c10_hp50,rescued,itr_one_base_short,0,
+synthetic_e06_c10_hp50,rescued,itr_errors_substitution,0,
+synthetic_e06_c10_hp50,rescued,itr_errors_deletion,0,
+synthetic_e06_c10_hp50,rescued,itr_errors_insertion,0,
+synthetic_e06_c10_hp50,rescued,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+synthetic_e06_c10_hp50,reads_harmed,n_clusters,148,harmed: ITR's only error is one deletion in a long run
+synthetic_e06_c10_hp50,reads_harmed,share_reads_run_shortened,0.6797,
+synthetic_e06_c10_hp50,reads_harmed,share_reads_run_correct,0.3122,
+synthetic_e06_c10_hp50,reads_harmed,share_reads_run_lengthened,0.0081,
+synthetic_e06_c10_hp50,reads_harmed,share_clusters_majority_shortened,0.9865,
+synthetic_e06_c10_hp50,reads_both_right,n_clusters,241,first long run of the strand
+synthetic_e06_c10_hp50,reads_both_right,share_reads_run_shortened,0.4722,
+synthetic_e06_c10_hp50,reads_both_right,share_reads_run_correct,0.5183,
+synthetic_e06_c10_hp50,reads_both_right,share_reads_run_lengthened,0.0095,
+synthetic_e06_c10_hp50,reads_both_right,share_clusters_majority_shortened,0.2573,
+synthetic_e06_c20,background,share_truth_positions_in_long_runs,0.0488,runs >= 4 equal bases
+synthetic_e06_c20,both_right,n_clusters,700,
+synthetic_e06_c20,both_right,coverage_median,20.0,
+synthetic_e06_c20,both_right,itr_edit_distance_median,0.0,
+synthetic_e06_c20,both_right,itr_length_wrong_share,0.0,label-free: length != designed
+synthetic_e06_c20,both_right,itr_one_base_short,0,
+synthetic_e06_c20,both_right,itr_errors_substitution,0,
+synthetic_e06_c20,both_right,itr_errors_deletion,0,
+synthetic_e06_c20,both_right,itr_errors_insertion,0,
+synthetic_e06_c20,both_right,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+synthetic_e06_c20,reads_harmed,n_clusters,0,harmed: ITR's only error is one deletion in a long run
+synthetic_e06_c20,reads_harmed,share_reads_run_shortened,,
+synthetic_e06_c20,reads_harmed,share_reads_run_correct,,
+synthetic_e06_c20,reads_harmed,share_reads_run_lengthened,,
+synthetic_e06_c20,reads_harmed,share_clusters_majority_shortened,,
+synthetic_e06_c20,reads_both_right,n_clusters,501,first long run of the strand
+synthetic_e06_c20,reads_both_right,share_reads_run_shortened,0.1504,
+synthetic_e06_c20,reads_both_right,share_reads_run_correct,0.8281,
+synthetic_e06_c20,reads_both_right,share_reads_run_lengthened,0.0215,
+synthetic_e06_c20,reads_both_right,share_clusters_majority_shortened,0.0,
+synthetic_e09_c05,background,share_truth_positions_in_long_runs,0.0481,runs >= 4 equal bases
+synthetic_e09_c05,both_right,n_clusters,96,
+synthetic_e09_c05,both_right,coverage_median,5.0,
+synthetic_e09_c05,both_right,itr_edit_distance_median,0.0,
+synthetic_e09_c05,both_right,itr_length_wrong_share,0.0,label-free: length != designed
+synthetic_e09_c05,both_right,itr_one_base_short,0,
+synthetic_e09_c05,both_right,itr_errors_substitution,0,
+synthetic_e09_c05,both_right,itr_errors_deletion,0,
+synthetic_e09_c05,both_right,itr_errors_insertion,0,
+synthetic_e09_c05,both_right,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+synthetic_e09_c05,both_wrong,n_clusters,196,
+synthetic_e09_c05,both_wrong,coverage_median,5.0,
+synthetic_e09_c05,both_wrong,itr_edit_distance_median,1.0,
+synthetic_e09_c05,both_wrong,itr_length_wrong_share,0.5051,label-free: length != designed
+synthetic_e09_c05,both_wrong,itr_one_base_short,1,
+synthetic_e09_c05,both_wrong,itr_errors_substitution,57,
+synthetic_e09_c05,both_wrong,itr_errors_deletion,64,
+synthetic_e09_c05,both_wrong,itr_errors_insertion,184,
+synthetic_e09_c05,both_wrong,itr_errors_in_long_runs_share,0.0525,truth homopolymer >= 4
+synthetic_e09_c05,harmed,n_clusters,22,
+synthetic_e09_c05,harmed,coverage_median,5.0,
+synthetic_e09_c05,harmed,itr_edit_distance_median,1.0,
+synthetic_e09_c05,harmed,itr_length_wrong_share,0.7273,label-free: length != designed
+synthetic_e09_c05,harmed,itr_one_base_short,0,
+synthetic_e09_c05,harmed,itr_errors_substitution,2,
+synthetic_e09_c05,harmed,itr_errors_deletion,4,
+synthetic_e09_c05,harmed,itr_errors_insertion,20,
+synthetic_e09_c05,harmed,itr_errors_in_long_runs_share,0.0,truth homopolymer >= 4
+synthetic_e09_c05,rescued,n_clusters,386,
+synthetic_e09_c05,rescued,coverage_median,5.0,
+synthetic_e09_c05,rescued,itr_edit_distance_median,0.0,
+synthetic_e09_c05,rescued,itr_length_wrong_share,0.0,label-free: length != designed
+synthetic_e09_c05,rescued,itr_one_base_short,0,
+synthetic_e09_c05,rescued,itr_errors_substitution,0,
+synthetic_e09_c05,rescued,itr_errors_deletion,0,
+synthetic_e09_c05,rescued,itr_errors_insertion,0,
+synthetic_e09_c05,rescued,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+synthetic_e09_c05,reads_harmed,n_clusters,0,harmed: ITR's only error is one deletion in a long run
+synthetic_e09_c05,reads_harmed,share_reads_run_shortened,,
+synthetic_e09_c05,reads_harmed,share_reads_run_correct,,
+synthetic_e09_c05,reads_harmed,share_reads_run_lengthened,,
+synthetic_e09_c05,reads_harmed,share_clusters_majority_shortened,,
+synthetic_e09_c05,reads_both_right,n_clusters,68,first long run of the strand
+synthetic_e09_c05,reads_both_right,share_reads_run_shortened,0.1853,
+synthetic_e09_c05,reads_both_right,share_reads_run_correct,0.7824,
+synthetic_e09_c05,reads_both_right,share_reads_run_lengthened,0.0324,
+synthetic_e09_c05,reads_both_right,share_clusters_majority_shortened,0.0147,
+synthetic_e09_c10,background,share_truth_positions_in_long_runs,0.0519,runs >= 4 equal bases
+synthetic_e09_c10,both_right,n_clusters,579,
+synthetic_e09_c10,both_right,coverage_median,10.0,
+synthetic_e09_c10,both_right,itr_edit_distance_median,0.0,
+synthetic_e09_c10,both_right,itr_length_wrong_share,0.0,label-free: length != designed
+synthetic_e09_c10,both_right,itr_one_base_short,0,
+synthetic_e09_c10,both_right,itr_errors_substitution,0,
+synthetic_e09_c10,both_right,itr_errors_deletion,0,
+synthetic_e09_c10,both_right,itr_errors_insertion,0,
+synthetic_e09_c10,both_right,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+synthetic_e09_c10,both_wrong,n_clusters,1,
+synthetic_e09_c10,both_wrong,coverage_median,10.0,
+synthetic_e09_c10,both_wrong,itr_edit_distance_median,1.0,
+synthetic_e09_c10,both_wrong,itr_length_wrong_share,1.0,label-free: length != designed
+synthetic_e09_c10,both_wrong,itr_one_base_short,1,
+synthetic_e09_c10,both_wrong,itr_errors_substitution,0,
+synthetic_e09_c10,both_wrong,itr_errors_deletion,1,
+synthetic_e09_c10,both_wrong,itr_errors_insertion,0,
+synthetic_e09_c10,both_wrong,itr_errors_in_long_runs_share,1.0,truth homopolymer >= 4
+synthetic_e09_c10,harmed,n_clusters,1,
+synthetic_e09_c10,harmed,coverage_median,10.0,
+synthetic_e09_c10,harmed,itr_edit_distance_median,1.0,
+synthetic_e09_c10,harmed,itr_length_wrong_share,1.0,label-free: length != designed
+synthetic_e09_c10,harmed,itr_one_base_short,1,
+synthetic_e09_c10,harmed,itr_errors_substitution,0,
+synthetic_e09_c10,harmed,itr_errors_deletion,1,
+synthetic_e09_c10,harmed,itr_errors_insertion,0,
+synthetic_e09_c10,harmed,itr_errors_in_long_runs_share,1.0,truth homopolymer >= 4
+synthetic_e09_c10,rescued,n_clusters,119,
+synthetic_e09_c10,rescued,coverage_median,10.0,
+synthetic_e09_c10,rescued,itr_edit_distance_median,0.0,
+synthetic_e09_c10,rescued,itr_length_wrong_share,0.0,label-free: length != designed
+synthetic_e09_c10,rescued,itr_one_base_short,0,
+synthetic_e09_c10,rescued,itr_errors_substitution,0,
+synthetic_e09_c10,rescued,itr_errors_deletion,0,
+synthetic_e09_c10,rescued,itr_errors_insertion,0,
+synthetic_e09_c10,rescued,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+synthetic_e09_c10,reads_harmed,n_clusters,1,harmed: ITR's only error is one deletion in a long run
+synthetic_e09_c10,reads_harmed,share_reads_run_shortened,0.7,
+synthetic_e09_c10,reads_harmed,share_reads_run_correct,0.3,
+synthetic_e09_c10,reads_harmed,share_reads_run_lengthened,0.0,
+synthetic_e09_c10,reads_harmed,share_clusters_majority_shortened,1.0,
+synthetic_e09_c10,reads_both_right,n_clusters,444,first long run of the strand
+synthetic_e09_c10,reads_both_right,share_reads_run_shortened,0.2223,
+synthetic_e09_c10,reads_both_right,share_reads_run_correct,0.7511,
+synthetic_e09_c10,reads_both_right,share_reads_run_lengthened,0.0266,
+synthetic_e09_c10,reads_both_right,share_clusters_majority_shortened,0.0135,
+synthetic_e09_c20,background,share_truth_positions_in_long_runs,0.0499,runs >= 4 equal bases
+synthetic_e09_c20,both_right,n_clusters,700,
+synthetic_e09_c20,both_right,coverage_median,20.0,
+synthetic_e09_c20,both_right,itr_edit_distance_median,0.0,
+synthetic_e09_c20,both_right,itr_length_wrong_share,0.0,label-free: length != designed
+synthetic_e09_c20,both_right,itr_one_base_short,0,
+synthetic_e09_c20,both_right,itr_errors_substitution,0,
+synthetic_e09_c20,both_right,itr_errors_deletion,0,
+synthetic_e09_c20,both_right,itr_errors_insertion,0,
+synthetic_e09_c20,both_right,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+synthetic_e09_c20,reads_harmed,n_clusters,0,harmed: ITR's only error is one deletion in a long run
+synthetic_e09_c20,reads_harmed,share_reads_run_shortened,,
+synthetic_e09_c20,reads_harmed,share_reads_run_correct,,
+synthetic_e09_c20,reads_harmed,share_reads_run_lengthened,,
+synthetic_e09_c20,reads_harmed,share_clusters_majority_shortened,,
+synthetic_e09_c20,reads_both_right,n_clusters,518,first long run of the strand
+synthetic_e09_c20,reads_both_right,share_reads_run_shortened,0.2234,
+synthetic_e09_c20,reads_both_right,share_reads_run_correct,0.7498,
+synthetic_e09_c20,reads_both_right,share_reads_run_lengthened,0.0268,
+synthetic_e09_c20,reads_both_right,share_clusters_majority_shortened,0.0039,
+synthetic_e12_c05,background,share_truth_positions_in_long_runs,0.0505,runs >= 4 equal bases
+synthetic_e12_c05,both_right,n_clusters,11,
+synthetic_e12_c05,both_right,coverage_median,5.0,
+synthetic_e12_c05,both_right,itr_edit_distance_median,0.0,
+synthetic_e12_c05,both_right,itr_length_wrong_share,0.0,label-free: length != designed
+synthetic_e12_c05,both_right,itr_one_base_short,0,
+synthetic_e12_c05,both_right,itr_errors_substitution,0,
+synthetic_e12_c05,both_right,itr_errors_deletion,0,
+synthetic_e12_c05,both_right,itr_errors_insertion,0,
+synthetic_e12_c05,both_right,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+synthetic_e12_c05,both_wrong,n_clusters,400,
+synthetic_e12_c05,both_wrong,coverage_median,5.0,
+synthetic_e12_c05,both_wrong,itr_edit_distance_median,2.0,
+synthetic_e12_c05,both_wrong,itr_length_wrong_share,0.5,label-free: length != designed
+synthetic_e12_c05,both_wrong,itr_one_base_short,3,
+synthetic_e12_c05,both_wrong,itr_errors_substitution,155,
+synthetic_e12_c05,both_wrong,itr_errors_deletion,197,
+synthetic_e12_c05,both_wrong,itr_errors_insertion,508,
+synthetic_e12_c05,both_wrong,itr_errors_in_long_runs_share,0.0442,truth homopolymer >= 4
+synthetic_e12_c05,harmed,n_clusters,6,
+synthetic_e12_c05,harmed,coverage_median,5.0,
+synthetic_e12_c05,harmed,itr_edit_distance_median,1.0,
+synthetic_e12_c05,harmed,itr_length_wrong_share,0.5,label-free: length != designed
+synthetic_e12_c05,harmed,itr_one_base_short,0,
+synthetic_e12_c05,harmed,itr_errors_substitution,4,
+synthetic_e12_c05,harmed,itr_errors_deletion,0,
+synthetic_e12_c05,harmed,itr_errors_insertion,3,
+synthetic_e12_c05,harmed,itr_errors_in_long_runs_share,0.0,truth homopolymer >= 4
+synthetic_e12_c05,rescued,n_clusters,283,
+synthetic_e12_c05,rescued,coverage_median,5.0,
+synthetic_e12_c05,rescued,itr_edit_distance_median,0.0,
+synthetic_e12_c05,rescued,itr_length_wrong_share,0.0,label-free: length != designed
+synthetic_e12_c05,rescued,itr_one_base_short,0,
+synthetic_e12_c05,rescued,itr_errors_substitution,0,
+synthetic_e12_c05,rescued,itr_errors_deletion,0,
+synthetic_e12_c05,rescued,itr_errors_insertion,0,
+synthetic_e12_c05,rescued,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+synthetic_e12_c05,reads_harmed,n_clusters,0,harmed: ITR's only error is one deletion in a long run
+synthetic_e12_c05,reads_harmed,share_reads_run_shortened,,
+synthetic_e12_c05,reads_harmed,share_reads_run_correct,,
+synthetic_e12_c05,reads_harmed,share_reads_run_lengthened,,
+synthetic_e12_c05,reads_harmed,share_clusters_majority_shortened,,
+synthetic_e12_c05,reads_both_right,n_clusters,10,first long run of the strand
+synthetic_e12_c05,reads_both_right,share_reads_run_shortened,0.26,
+synthetic_e12_c05,reads_both_right,share_reads_run_correct,0.74,
+synthetic_e12_c05,reads_both_right,share_reads_run_lengthened,0.0,
+synthetic_e12_c05,reads_both_right,share_clusters_majority_shortened,0.1,
+synthetic_e12_c10,background,share_truth_positions_in_long_runs,0.0488,runs >= 4 equal bases
+synthetic_e12_c10,both_right,n_clusters,307,
+synthetic_e12_c10,both_right,coverage_median,10.0,
+synthetic_e12_c10,both_right,itr_edit_distance_median,0.0,
+synthetic_e12_c10,both_right,itr_length_wrong_share,0.0,label-free: length != designed
+synthetic_e12_c10,both_right,itr_one_base_short,0,
+synthetic_e12_c10,both_right,itr_errors_substitution,0,
+synthetic_e12_c10,both_right,itr_errors_deletion,0,
+synthetic_e12_c10,both_right,itr_errors_insertion,0,
+synthetic_e12_c10,both_right,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+synthetic_e12_c10,both_wrong,n_clusters,9,
+synthetic_e12_c10,both_wrong,coverage_median,10.0,
+synthetic_e12_c10,both_wrong,itr_edit_distance_median,1.0,
+synthetic_e12_c10,both_wrong,itr_length_wrong_share,0.6667,label-free: length != designed
+synthetic_e12_c10,both_wrong,itr_one_base_short,3,
+synthetic_e12_c10,both_wrong,itr_errors_substitution,1,
+synthetic_e12_c10,both_wrong,itr_errors_deletion,5,
+synthetic_e12_c10,both_wrong,itr_errors_insertion,5,
+synthetic_e12_c10,both_wrong,itr_errors_in_long_runs_share,0.1818,truth homopolymer >= 4
+synthetic_e12_c10,harmed,n_clusters,1,
+synthetic_e12_c10,harmed,coverage_median,10.0,
+synthetic_e12_c10,harmed,itr_edit_distance_median,1.0,
+synthetic_e12_c10,harmed,itr_length_wrong_share,1.0,label-free: length != designed
+synthetic_e12_c10,harmed,itr_one_base_short,0,
+synthetic_e12_c10,harmed,itr_errors_substitution,0,
+synthetic_e12_c10,harmed,itr_errors_deletion,0,
+synthetic_e12_c10,harmed,itr_errors_insertion,1,
+synthetic_e12_c10,harmed,itr_errors_in_long_runs_share,0.0,truth homopolymer >= 4
+synthetic_e12_c10,rescued,n_clusters,383,
+synthetic_e12_c10,rescued,coverage_median,10.0,
+synthetic_e12_c10,rescued,itr_edit_distance_median,0.0,
+synthetic_e12_c10,rescued,itr_length_wrong_share,0.0,label-free: length != designed
+synthetic_e12_c10,rescued,itr_one_base_short,0,
+synthetic_e12_c10,rescued,itr_errors_substitution,0,
+synthetic_e12_c10,rescued,itr_errors_deletion,0,
+synthetic_e12_c10,rescued,itr_errors_insertion,0,
+synthetic_e12_c10,rescued,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+synthetic_e12_c10,reads_harmed,n_clusters,0,harmed: ITR's only error is one deletion in a long run
+synthetic_e12_c10,reads_harmed,share_reads_run_shortened,,
+synthetic_e12_c10,reads_harmed,share_reads_run_correct,,
+synthetic_e12_c10,reads_harmed,share_reads_run_lengthened,,
+synthetic_e12_c10,reads_harmed,share_clusters_majority_shortened,,
+synthetic_e12_c10,reads_both_right,n_clusters,223,first long run of the strand
+synthetic_e12_c10,reads_both_right,share_reads_run_shortened,0.2592,
+synthetic_e12_c10,reads_both_right,share_reads_run_correct,0.7143,
+synthetic_e12_c10,reads_both_right,share_reads_run_lengthened,0.0265,
+synthetic_e12_c10,reads_both_right,share_clusters_majority_shortened,0.0135,
+synthetic_e12_c20,background,share_truth_positions_in_long_runs,0.0474,runs >= 4 equal bases
+synthetic_e12_c20,both_right,n_clusters,676,
+synthetic_e12_c20,both_right,coverage_median,20.0,
+synthetic_e12_c20,both_right,itr_edit_distance_median,0.0,
+synthetic_e12_c20,both_right,itr_length_wrong_share,0.0,label-free: length != designed
+synthetic_e12_c20,both_right,itr_one_base_short,0,
+synthetic_e12_c20,both_right,itr_errors_substitution,0,
+synthetic_e12_c20,both_right,itr_errors_deletion,0,
+synthetic_e12_c20,both_right,itr_errors_insertion,0,
+synthetic_e12_c20,both_right,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+synthetic_e12_c20,rescued,n_clusters,24,
+synthetic_e12_c20,rescued,coverage_median,20.0,
+synthetic_e12_c20,rescued,itr_edit_distance_median,0.0,
+synthetic_e12_c20,rescued,itr_length_wrong_share,0.0,label-free: length != designed
+synthetic_e12_c20,rescued,itr_one_base_short,0,
+synthetic_e12_c20,rescued,itr_errors_substitution,0,
+synthetic_e12_c20,rescued,itr_errors_deletion,0,
+synthetic_e12_c20,rescued,itr_errors_insertion,0,
+synthetic_e12_c20,rescued,itr_errors_in_long_runs_share,,truth homopolymer >= 4
+synthetic_e12_c20,reads_harmed,n_clusters,0,harmed: ITR's only error is one deletion in a long run
+synthetic_e12_c20,reads_harmed,share_reads_run_shortened,,
+synthetic_e12_c20,reads_harmed,share_reads_run_correct,,
+synthetic_e12_c20,reads_harmed,share_reads_run_lengthened,,
+synthetic_e12_c20,reads_harmed,share_clusters_majority_shortened,,
+synthetic_e12_c20,reads_both_right,n_clusters,484,first long run of the strand
+synthetic_e12_c20,reads_both_right,share_reads_run_shortened,0.283,
+synthetic_e12_c20,reads_both_right,share_reads_run_correct,0.6853,
+synthetic_e12_c20,reads_both_right,share_reads_run_lengthened,0.0317,
+synthetic_e12_c20,reads_both_right,share_clusters_majority_shortened,0.0145,
+all,runs,bbs_run,synthetic_test_bbs-20261002-142420-r1,
+all,runs,itr_run,synthetic_test_itr-20261002-161609-r1,
