@@ -213,8 +213,13 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
   0.933, synthetic 0.947. Post hoc only: Microsoft length check τ 0.7–0.9 is +0.2 pt.
   Code review fixes: live rows paired with the live run's own BBS, `mcnemar_log10_p`,
   input/live-vs-cache guards, `metrics.cascade_frame` (all summaries byte-identical).
-  **Next (Week 3):** full scaling campaign (`configs/final/scaling.yaml`, overnight, idle
-  laptop, timing protocol), figures, writing brief update.
+  **Test split is open; everything in the methodology stays frozen.**
+  **Next (Week 3), in order:** (1) investigate the one-off failure of
+  `tests/integration/test_scheduler_real.py::test_g5_5_bad_clusters_are_contained` in a full
+  run on 3 Oct (passed alone; message not captured; cause unverified, suspected 5 s timeout
+  under load) before the scaling campaign; (2) ask the user to push (local commits since
+  `307c39b` are not pushed); (3) full scaling campaign (`configs/final/scaling.yaml`,
+  overnight, idle laptop, timing protocol); (4) figures; (5) writing brief update.
 - Sanity targets **verified** in the BBS paper (iScience 2025, Table 2, "Srinivasavaradhan
   et al." = Microsoft CNR, all 10,000 clusters, default parameters, beam 20): success rate
   (exact match) BBS 94.77%, ITR 87.58%, CPL 94.93%; ITR took 7,352 s (~0.74 s/cluster, i9-13900H).
