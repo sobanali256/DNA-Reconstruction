@@ -366,3 +366,28 @@ the BCa interval is degenerate and left empty.
   falls to 58%.
 - Per condition the best τ differs widely (e.g. `e12_c10` wants τ = 1, `hp50` wants τ = 0):
   a global τ is a compromise, which is why per-condition τ is reported only as an oracle.
+
+## Day 8: τ selection on dev (provisional until the methodology freeze)
+
+```bash
+.venv/bin/python analysis/select_tau.py configs/tau_selection.yaml
+```
+
+Rule (decided 2 Oct): per dataset family, the **cheapest τ in the grid whose pooled dev
+exact rate is within 0.25 points of the best τ**; cost = share of clusters routed to ITR.
+Default selector primary, length check secondary. Only dev runs are accepted (the script
+reads each run's manifest and stops on anything else, gate G7.5). Table:
+`results/summary/tau_selection.csv`.
+
+| Family | Selector | τ | Dev exact | Routed | Best τ in grid | BBS only |
+|---|---|---|---|---|---|---|
+| **Synthetic (primary)** | default | **0.8** | 88.77% | 31% | 0.9 (89.00%, 38%) | 75.85% |
+| Synthetic | length check | 0.99 | 91.38% | 61% | 1.0 (91.56%) | 75.85% |
+| **Microsoft (primary)** | default | **0** | 96.00% | 0% | 0 | 96.00% |
+| Microsoft | length check | 0 | 96.00% | 0% | 0.6 (96.13%) | 96.00% |
+
+- On Microsoft the rule selects τ = 0: the deployable policy is BBS alone. That is the
+  honest outcome of the Day 7 finding, not a failure of the rule.
+- Per-condition (oracle) τ ranges from 0 (`hp50`, low-error conditions) to 1 (`e06_c10`,
+  `e09_c10`, `e12_c10`, `e12_c20`). With 300 clusters per condition, 0.25 points is less than
+  one cluster, so the oracle rule picks each condition's best τ.
