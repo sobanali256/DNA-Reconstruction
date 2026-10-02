@@ -11,7 +11,9 @@ quality columns. Written files are raw results: the writers refuse to overwrite.
 
 Final selection (decided 30 Sep 2026): a successful ITR result wins; otherwise the BBS
 result is kept (so an ITR timeout or crash on a routed cluster falls back to BBS); with
-neither, the cluster fails. An empty BBS string still counts as an output.
+neither, the cluster fails. An empty BBS string still counts as an output. The secondary
+selector `length_check` (adaptive runs only) also keeps BBS when ITR's output length differs
+from the designed length; it uses no ground truth.
 """
 
 from __future__ import annotations
@@ -29,6 +31,7 @@ from dnarecon.metrics import score_cluster
 from dnarecon.models import ClusterRecord, ResultRecord
 
 METHODS = ("bbs_only", "itr_only", "adaptive")
+SELECTORS = ("default", "length_check")
 NO_ENGINE_STATUSES = frozenset({"not_run", "not_routed"})  # engine never saw the cluster
 
 
@@ -45,6 +48,7 @@ def build_record(
     itr_task_id: str = "",
     itr_task_failed: bool = False,
     worker_id: int | None = None,
+    selector: str = "default",
 ) -> ResultRecord:
     """Combine one cluster's engine outputs into a ResultRecord (no quality columns yet).
 
@@ -55,6 +59,8 @@ def build_record(
     """
     if method not in METHODS:
         raise ValueError(f"unknown method {method!r}")
+    if selector not in SELECTORS or (selector != "default" and method != "adaptive"):
+        raise ValueError(f"selector {selector!r} is not valid for method {method}")
     uses_bbs = method != "itr_only"
     uses_itr = method != "bbs_only"
     cid = cluster.cluster_id
@@ -98,7 +104,9 @@ def build_record(
             itr_status = "not_routed" if method == "adaptive" else "not_run"
 
     itr_ok = itr is not None and not itr.itr_failed
-    if itr_ok:
+    length_rejected = (selector == "length_check" and itr_ok and bbs is not None
+                       and len(itr.sequence) != cluster.expected_length)
+    if itr_ok and not length_rejected:
         final_sequence, final_algorithm = itr.sequence, "itr"
     elif bbs is not None:
         final_sequence, final_algorithm = bbs.sequence, "bbs"

@@ -1,0 +1,22 @@
+# Week 2: live adaptive pipeline on the synthetic dev split at the provisional tau (0.8,
+# analysis/select_tau.py). Consistency check: must reproduce the cached tau sweep row
+# (results/summary/synthetic_dev_tau_sweep.csv, tau 0.8, default selector), apart from
+# BBS tie clusters (confidence <= 0.5) whose BBS sequence can differ between runs.
+#   .venv/bin/python scripts/run_experiment.py configs/synthetic_dev_adaptive.yaml
+experiment_name: synthetic_dev_adaptive
+dataset: configs/dataset_synthetic.yaml
+clusters: data/splits/synthetic_grid_split.csv
+split: dev
+method: adaptive
+tau: 0.8
+selector: default
+bbs:
+  config: configs/bbs.yaml
+  threads: 4
+  shards: 1
+itr:
+  config: configs/itr.yaml
+  workers: 1
+  microbatch_size: 25
+repetitions: 1
+output_root: results/

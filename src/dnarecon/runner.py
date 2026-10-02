@@ -9,9 +9,13 @@ Each repetition writes results/<run_id>/ (run_id = <experiment>-<YYYYMMDD-HHMMSS
   * per_cluster.csv and timing.csv (dnarecon.results);
   * raw/: BBS input, CSV and stderr; ITR scratch files (kept only when a cluster failed).
 
-Methods: bbs_only (shards run one after another, `threads` BBS threads each) and itr_only
-(micro-batches run one after another on one worker). Adaptive runs need the router and
-parallel ITR needs the scheduler; both come later and are rejected here.
+Methods:
+  * bbs_only: shards run one after another, `threads` BBS threads each;
+  * itr_only: micro-batches run one after another on one worker;
+  * adaptive: Stage A BBS (as bbs_only), Stage B route clusters with confidence < `tau`
+    (dnarecon.router), Stage C ITR on the routed clusters only (as itr_only); final
+    selection by `selector` (default | length_check, dnarecon.results.build_record).
+Parallel ITR needs the scheduler; it comes later and is rejected here.
 
 A failing BBS shard or ITR task is recorded as that engine's failure for its clusters and
 the run continues. Ground truth is used only by attach_metrics, after reconstruction.
@@ -35,6 +39,7 @@ from dnarecon.dataset import SPLIT_DEV, dataset_files, load_dataset, read_cluste
 from dnarecon.itr_adapter import ItrRunError, ItrSettings, run_itr_batch
 from dnarecon.models import ClusterRecord
 from dnarecon.results import (
+    SELECTORS,
     TimingRecord,
     attach_metrics,
     build_record,
@@ -43,9 +48,10 @@ from dnarecon.results import (
     write_per_cluster,
     write_timing,
 )
+from dnarecon.router import route
 
 ROOT = prov.ROOT
-RUNNABLE_METHODS = ("bbs_only", "itr_only")
+RUNNABLE_METHODS = ("bbs_only", "itr_only", "adaptive")
 NAME_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
 
 Log = Callable[[str], None]
@@ -64,22 +70,28 @@ def load_config(path: str | Path) -> dict:
     if not NAME_RE.match(str(cfg["experiment_name"])):
         raise ValueError(f"{path}: experiment_name may use only letters, digits, '_', '.', '-'")
     method = cfg["method"]
-    if method == "adaptive":
-        raise ValueError(f"{path}: adaptive runs need the router (Week 2); run bbs_only and itr_only")
     if method not in RUNNABLE_METHODS:
         raise ValueError(f"{path}: unknown method {method!r}")
     if cfg.get("split", "dev") not in ("dev", "test"):
         raise ValueError(f"{path}: split must be dev or test")
     if int(cfg["repetitions"]) < 1:
         raise ValueError(f"{path}: repetitions must be >= 1")
-    if method == "bbs_only":
+    if method == "adaptive":
+        tau = cfg.get("tau")
+        if isinstance(tau, bool) or not isinstance(tau, (int, float)) or not 0 <= tau <= 1:
+            raise ValueError(f"{path}: adaptive runs need 'tau' in [0, 1]")
+        if cfg.get("selector", "default") not in SELECTORS:
+            raise ValueError(f"{path}: selector must be one of {SELECTORS}")
+    elif "tau" in cfg or "selector" in cfg:
+        raise ValueError(f"{path}: 'tau' and 'selector' apply to adaptive runs only")
+    if method in ("bbs_only", "adaptive"):
         bbs = cfg.get("bbs") or {}
         for key in ("config", "threads", "shards"):
             if key not in bbs:
                 raise ValueError(f"{path}: missing 'bbs.{key}'")
         if int(bbs["threads"]) < 1 or int(bbs["shards"]) < 1:
             raise ValueError(f"{path}: bbs.threads and bbs.shards must be >= 1")
-    else:
+    if method in ("itr_only", "adaptive"):
         itr = cfg.get("itr") or {}
         for key in ("config", "workers", "microbatch_size"):
             if key not in itr:
@@ -142,8 +154,11 @@ def run_experiment(
 
 
 def _engine_config(cfg: dict, root: Path) -> dict:
-    section = cfg["bbs"] if cfg["method"] == "bbs_only" else cfg["itr"]
-    return yaml.safe_load((root / section["config"]).read_text())
+    """The engine settings a run loads; adaptive runs load both, as {"bbs": ..., "itr": ...}."""
+    load = lambda engine: yaml.safe_load((root / cfg[engine]["config"]).read_text())
+    if cfg["method"] == "adaptive":
+        return {"bbs": load("bbs"), "itr": load("itr")}
+    return load("bbs" if cfg["method"] == "bbs_only" else "itr")
 
 
 def _run_once(cfg, engine_cfg, clusters, splits, run_id, run_dir, rep, provenance,
@@ -173,11 +188,10 @@ def _run_once(cfg, engine_cfg, clusters, splits, run_id, run_dir, rep, provenanc
     _write_manifest(run_dir, manifest)
     try:
         start, start_epoch = time.perf_counter(), time.time()
-        if cfg["method"] == "bbs_only":
-            records, timing = _run_bbs(cfg, engine_cfg, clusters, splits, run_id, run_dir, root, log)
-        else:
-            records, timing = _run_itr(cfg, engine_cfg, clusters, splits, run_id, run_dir, root, log)
-        stage_status = next(t.status for t in timing if t.kind == "stage")
+        run_method = {"bbs_only": _run_bbs, "itr_only": _run_itr, "adaptive": _run_adaptive}[cfg["method"]]
+        records, timing, extra = run_method(cfg, engine_cfg, clusters, splits, run_id, run_dir, root, log)
+        manifest.update(extra)
+        stage_status = "failed" if any(t.status == "failed" for t in timing if t.kind == "stage") else "ok"
         timing.append(TimingRecord(run_id, "run", run_id, None, len(clusters), None, start_epoch,
                                    time.time(), (time.perf_counter() - start) * 1000, None,
                                    stage_status))
@@ -200,6 +214,65 @@ def _run_once(cfg, engine_cfg, clusters, splits, run_id, run_dir, rep, provenanc
 
 def _run_bbs(cfg, engine_cfg, clusters, splits, run_id, run_dir, root, log):
     settings = BbsSettings.from_config(engine_cfg, root)
+    results, shard_of, failed, timing = _bbs_stage(cfg, settings, clusters, run_id, run_dir, log)
+    records = [
+        build_record(c, run_id=run_id, split=splits[c.cluster_id], method="bbs_only",
+                     bbs=results.get(c.cluster_id), bbs_shard_id=shard_of.get(c.cluster_id, ""),
+                     bbs_shard_failed=c.cluster_id in failed)
+        for c in clusters
+    ]
+    return records, timing, {}
+
+
+def _run_itr(cfg, engine_cfg, clusters, splits, run_id, run_dir, root, log):
+    settings = ItrSettings.from_config(engine_cfg, root)
+    non_empty = [c for c in clusters if not c.is_empty]
+    results, task_of, worker_of, failed, timing = _itr_stage(cfg, settings, non_empty, run_id, run_dir, log)
+    records = [
+        build_record(c, run_id=run_id, split=splits[c.cluster_id], method="itr_only",
+                     itr=results.get(c.cluster_id), itr_task_id=task_of.get(c.cluster_id, ""),
+                     itr_task_failed=c.cluster_id in failed, worker_id=worker_of.get(c.cluster_id))
+        for c in clusters
+    ]
+    return records, timing, {}
+
+
+def _run_adaptive(cfg, engine_cfg, clusters, splits, run_id, run_dir, root, log):
+    """Stage A BBS on every non-empty cluster, Stage B route, Stage C ITR on the routed ones."""
+    bbs_settings = BbsSettings.from_config(engine_cfg["bbs"], root)
+    itr_settings = ItrSettings.from_config(engine_cfg["itr"], root)
+    tau, selector = float(cfg["tau"]), cfg.get("selector", "default")
+
+    bbs, shard_of, bbs_failed, timing = _bbs_stage(cfg, bbs_settings, clusters, run_id, run_dir, log)
+
+    stage_start, stage_epoch = time.perf_counter(), time.time()
+    confidences = {c.cluster_id: bbs[c.cluster_id].confidence if c.cluster_id in bbs else None
+                   for c in clusters}  # IDs and confidences only: the router sees nothing else
+    routed = set(route(confidences, tau))
+    timing.append(_stage(run_id, "route", len(clusters), None, stage_epoch, stage_start, "ok"))
+    log(f"[{run_id}] routed {len(routed)}/{len(clusters)} clusters to ITR (tau {tau})")
+
+    to_itr = [c for c in clusters if c.cluster_id in routed]  # list order kept
+    itr, task_of, worker_of, itr_failed, itr_timing = _itr_stage(cfg, itr_settings, to_itr, run_id,
+                                                                 run_dir, log)
+    timing += itr_timing
+    records = [
+        build_record(c, run_id=run_id, split=splits[c.cluster_id], method="adaptive",
+                     bbs=bbs.get(c.cluster_id), bbs_shard_id=shard_of.get(c.cluster_id, ""),
+                     bbs_shard_failed=c.cluster_id in bbs_failed,
+                     itr=itr.get(c.cluster_id), itr_task_id=task_of.get(c.cluster_id, ""),
+                     itr_task_failed=c.cluster_id in itr_failed,
+                     worker_id=worker_of.get(c.cluster_id), selector=selector)
+        for c in clusters
+    ]
+    routed_ids = "\n".join(c.cluster_id for c in to_itr)
+    extra = {"tau": tau, "selector": selector, "n_routed": len(to_itr),
+             "routed_ids_sha256": hashlib.sha256(routed_ids.encode()).hexdigest()}
+    return records, timing, extra
+
+
+def _bbs_stage(cfg, settings, clusters, run_id, run_dir, log):
+    """BBS on the non-empty clusters in contiguous shards: results, shard map, failed IDs, timing."""
     threads = int(cfg["bbs"]["threads"])
     non_empty = [c for c in clusters if not c.is_empty]
     lengths = {c.expected_length for c in non_empty}
@@ -227,29 +300,26 @@ def _run_bbs(cfg, engine_cfg, clusters, splits, run_id, run_dir, root, log):
         timing.append(timing_from_bbs_shard(run_id, shard))
     timing.append(_stage(run_id, "bbs", len(non_empty), threads, stage_epoch, stage_start,
                          "failed" if failed else "ok"))
-    records = [
-        build_record(c, run_id=run_id, split=splits[c.cluster_id], method="bbs_only",
-                     bbs=results.get(c.cluster_id), bbs_shard_id=shard_of.get(c.cluster_id, ""),
-                     bbs_shard_failed=c.cluster_id in failed)
-        for c in clusters
-    ]
-    return records, timing
+    return results, shard_of, failed, timing
 
 
-def _run_itr(cfg, engine_cfg, clusters, splits, run_id, run_dir, root, log):
-    settings = ItrSettings.from_config(engine_cfg, root)
+def _itr_stage(cfg, settings, to_run, run_id, run_dir, log):
+    """ITR on `to_run` (non-empty clusters) in micro-batches on one worker.
+
+    Returns results, task map, worker map, IDs of failed tasks' clusters, timing.
+    """
     size = int(cfg["itr"]["microbatch_size"])
     worker_id = 0  # one worker until the scheduler exists
-    non_empty = [c for c in clusters if not c.is_empty]
     raw = run_dir / "raw"
-    results, task_of, failed, timing = {}, {}, set(), []
+    results, task_of, worker_of, failed, timing = {}, {}, {}, set(), []
     stage_start, stage_epoch = time.perf_counter(), time.time()
     done = 0
-    for i in range(0, len(non_empty), size):
-        batch = non_empty[i:i + size]
+    for i in range(0, len(to_run), size):
+        batch = to_run[i:i + size]
         task_id = f"t{i // size}"
         for c in batch:
             task_of[c.cluster_id] = task_id
+            worker_of[c.cluster_id] = worker_id
         started, t0 = time.time(), time.perf_counter()
         try:
             out = run_itr_batch(batch, settings, workdir=raw, task_id=task_id)
@@ -266,20 +336,11 @@ def _run_itr(cfg, engine_cfg, clusters, splits, run_id, run_dir, root, log):
             if bad:
                 log(f"[{run_id}] {task_id}: " + ", ".join(f"{r.cluster_id} {r.status}" for r in bad))
         done += len(batch)
-        log(f"[{run_id}] ITR {done}/{len(non_empty)} clusters, "
+        log(f"[{run_id}] ITR {done}/{len(to_run)} clusters, "
             f"{time.perf_counter() - stage_start:.0f} s")
-    timing.append(_stage(run_id, "itr", len(non_empty), 1, stage_epoch, stage_start,
+    timing.append(_stage(run_id, "itr", len(to_run), 1, stage_epoch, stage_start,
                          "failed" if failed else "ok"))
-    records = []
-    for c in clusters:
-        cid = c.cluster_id
-        ran = cid in task_of
-        records.append(build_record(
-            c, run_id=run_id, split=splits[cid], method="itr_only",
-            itr=results.get(cid), itr_task_id=task_of.get(cid, ""),
-            itr_task_failed=cid in failed, worker_id=worker_id if ran else None,
-        ))
-    return records, timing
+    return results, task_of, worker_of, failed, timing
 
 
 def _stage(run_id, stage_id, n, threads, started_at, start, status) -> TimingRecord:

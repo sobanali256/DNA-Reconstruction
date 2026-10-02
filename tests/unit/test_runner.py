@@ -10,6 +10,8 @@ import pytest
 import yaml
 
 from dnarecon import runner
+from dnarecon.bbs_adapter import BbsClusterResult, BbsShardResult
+from dnarecon.itr_adapter import ItrBatchResult, ItrClusterResult, ItrRunError
 from dnarecon.models import ClusterRecord
 from dnarecon.results import read_per_cluster, read_timing
 from dnarecon.dataset import save_records_jsonl
@@ -56,10 +58,12 @@ def root(tmp_path, monkeypatch):
 def config(method="bbs_only", **extra):
     cfg = {"experiment_name": "t", "dataset": "ds.yaml", "clusters": "list.csv",
            "method": method, "repetitions": 1, "output_root": "out"}
-    if method == "bbs_only":
+    if method in ("bbs_only", "adaptive"):
         cfg["bbs"] = {"config": "bbs.yaml", "threads": 1, "shards": 2}
-    else:
+    if method in ("itr_only", "adaptive"):
         cfg["itr"] = {"config": "itr.yaml", "workers": 1, "microbatch_size": 1}
+    if method == "adaptive":
+        cfg["tau"] = 0.8
     cfg.update(extra)
     return cfg
 
@@ -70,13 +74,14 @@ def write_config(tmp_path, cfg):
     return path
 
 
-@pytest.mark.parametrize("method", ["bbs_only", "itr_only"])
+@pytest.mark.parametrize("method", ["bbs_only", "itr_only", "adaptive"])
 def test_valid_configs_load(tmp_path, method):
     assert load_config(write_config(tmp_path, config(method)))["method"] == method
 
 
 @pytest.mark.parametrize("change", [
-    {"method": "adaptive"},
+    {"method": "adaptive"},  # no tau, no itr section
+    {"tau": 0.5},  # tau on a non-adaptive run
     {"method": "nope"},
     {"repetitions": 0},
     {"experiment_name": "bad name/"},
@@ -196,3 +201,97 @@ def test_chunks_are_contiguous_and_balanced():
     assert _chunks(list(range(7)), 3) == [[0, 1, 2], [3, 4], [5, 6]]
     assert _chunks([1, 2], 5) == [[1], [2]]
     assert _chunks([], 2) == []
+
+
+# --- adaptive runs (gates G3.4, G3.5), with fake engines -------------------------------
+
+def adaptive_clusters():
+    """c1..c4 with BBS confidence 0.1, 0.5, 0.9, 1.0 (fake engines below), plus an empty one."""
+    return [*(ClusterRecord(f"c{i}", ("ACGT", "ACGT"), 4, "t", original_sequence=TRUTH) for i in range(1, 5)),
+            ClusterRecord("e", (), 4, "t", original_sequence=TRUTH)]
+
+
+CONFIDENCE = {"c1": 0.1, "c2": 0.5, "c3": 0.9, "c4": 1.0}
+
+
+@pytest.fixture
+def fake_engines(monkeypatch):
+    """BBS answers 'ACGA' (wrong) with fixed confidences; ITR answers per a mutable plan."""
+    plan = {"itr": {}, "itr_task_fail": set(), "seen": []}
+
+    def fake_bbs(chunk, settings, *, length, threads, workdir, shard_id, timeout_s=None):
+        res = [BbsClusterResult(c.cluster_id, "ACGA", 4, 1.0, CONFIDENCE[c.cluster_id]) for c in chunk]
+        return BbsShardResult(shard_id, res, 0.01, threads, ["bbs"], 0.0, 0.01)
+
+    def fake_itr(batch, settings, *, workdir, task_id, timeout_s_per_cluster=None):
+        plan["seen"] += [c.cluster_id for c in batch]
+        if any(c.cluster_id in plan["itr_task_fail"] for c in batch):
+            raise ItrRunError("boom")
+        res = [ItrClusterResult(c.cluster_id, *plan["itr"].get(c.cluster_id, ("ok", "ACGT")), 5.0, 2, 2)
+               for c in batch]
+        return ItrBatchResult(task_id, res, 0.0, 0.01, 0.01, 1, ["itr"])
+
+    monkeypatch.setattr(runner, "run_shard", fake_bbs)
+    monkeypatch.setattr(runner, "run_itr_batch", fake_itr)
+    return plan
+
+
+def run_adaptive(root, **extra):
+    cs = adaptive_clusters()
+    splits = {c.cluster_id: "dev" for c in cs}
+    (run_dir,) = run_experiment(config("adaptive", **extra), cs, splits, root=root, log=lambda m: None)
+    rows = {r.cluster_id: r for r in read_per_cluster(run_dir / "per_cluster.csv")}
+    return run_dir, rows
+
+
+def test_adaptive_routes_below_tau_and_itr_wins(root, fake_engines):
+    run_dir, rows = run_adaptive(root)
+    assert fake_engines["seen"] == ["c1", "c2"]  # ITR sees only the routed clusters
+    assert list(rows) == ["c1", "c2", "c3", "c4", "e"]  # G3.5: every cluster, list order
+    assert all(r.final_algorithm and r.routed_to_itr is not None for r in rows.values())  # G3.4
+    assert [rows[c].routed_to_itr for c in rows] == [True, True, False, False, False]
+    assert [rows[c].final_algorithm for c in rows] == ["itr", "itr", "bbs", "bbs", "none"]
+    assert (rows["c3"].itr_status, rows["e"].itr_status) == ("not_routed", "empty_cluster")
+    assert rows["c1"].exact_match and not rows["c3"].exact_match
+    manifest = json.loads((run_dir / "manifest.json").read_text())
+    assert (manifest["tau"], manifest["selector"], manifest["n_routed"]) == (0.8, "default", 2)
+    assert manifest["routed_ids_sha256"] == hashlib.sha256(b"c1\nc2").hexdigest()
+    assert set(manifest["engine_config"]) == {"bbs", "itr"}
+    kinds = [(t.kind, t.id) for t in read_timing(run_dir / "timing.csv")]
+    assert [k for k in kinds if k[0] == "stage"] == [("stage", "bbs"), ("stage", "route"), ("stage", "itr")]
+    assert [k for k in kinds if k[0] == "itr_task"] == [("itr_task", "t0"), ("itr_task", "t1")]
+    assert kinds[-1] == ("run", run_dir.name)
+
+
+def test_adaptive_tau_zero_is_bbs_only(root, fake_engines):
+    _, rows = run_adaptive(root, tau=0)
+    assert fake_engines["seen"] == [] and not any(r.routed_to_itr for r in rows.values())
+
+
+def test_adaptive_itr_failure_keeps_bbs(root, fake_engines):
+    fake_engines["itr"]["c1"] = ("timeout", "")
+    fake_engines["itr_task_fail"].add("c2")
+    _, rows = run_adaptive(root)
+    for cid, status in (("c1", "timeout"), ("c2", "task_failed")):
+        r = rows[cid]
+        assert (r.routed_to_itr, r.itr_failed, r.itr_status) == (True, True, status)
+        assert (r.final_algorithm, r.final_sequence, r.status) == ("bbs", "ACGA", "ok")
+
+
+def test_adaptive_length_check_keeps_bbs_on_wrong_length(root, fake_engines):
+    fake_engines["itr"]["c1"] = ("ok", "ACG")  # one base short
+    _, rows = run_adaptive(root, selector="length_check")
+    assert (rows["c1"].final_algorithm, rows["c1"].itr_sequence) == ("bbs", "ACG")
+    assert rows["c2"].final_algorithm == "itr"
+    _, rows = run_adaptive(root, experiment_name="t2")  # default selector takes ITR's answer
+    assert rows["c1"].final_algorithm == "itr"
+
+
+def test_adaptive_failed_bbs_shard_is_never_routed(root, fake_engines, monkeypatch):
+    def failing_bbs(chunk, settings, **kwargs):
+        from dnarecon.bbs_adapter import BbsRunError
+        raise BbsRunError("down")
+    monkeypatch.setattr(runner, "run_shard", failing_bbs)
+    _, rows = run_adaptive(root, tau=1)
+    assert fake_engines["seen"] == []
+    assert all(r.failure_reason in ("bbs_shard_failed", "empty_cluster") for r in rows.values())
