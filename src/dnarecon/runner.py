@@ -11,11 +11,14 @@ Each repetition writes results/<run_id>/ (run_id = <experiment>-<YYYYMMDD-HHMMSS
 
 Methods:
   * bbs_only: shards run one after another, `threads` BBS threads each;
-  * itr_only: micro-batches run one after another on one worker;
+  * itr_only: micro-batches of `itr.microbatch_size` clusters on `itr.workers` workers,
+    scheduled by `itr.scheduler` (serial | static | static_lpt | dynamic, dnarecon.scheduler);
   * adaptive: Stage A BBS (as bbs_only), Stage B route clusters with confidence < `tau`
     (dnarecon.router), Stage C ITR on the routed clusters only (as itr_only); final
     selection by `selector` (default | length_check, dnarecon.results.build_record).
-Parallel ITR needs the scheduler; it comes later and is rejected here.
+
+`warmup: N` (optional) first runs N unmeasured repetitions (<run_id> ending -w<k>, manifest
+`measured: false`); their folders are kept like any other run.
 
 A failing BBS shard or ITR task is recorded as that engine's failure for its clusters and
 the run continues. Ground truth is used only by attach_metrics, after reconstruction.
@@ -49,10 +52,12 @@ from dnarecon.results import (
     write_timing,
 )
 from dnarecon.router import route
+from dnarecon.scheduler import MODES, Task, run_tasks
 
 ROOT = prov.ROOT
 RUNNABLE_METHODS = ("bbs_only", "itr_only", "adaptive")
 NAME_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
+ITR_MAX_READS = 25  # upstream ITR keeps the first 25 reads (maxCopies): cost estimate only
 
 Log = Callable[[str], None]
 
@@ -76,6 +81,8 @@ def load_config(path: str | Path) -> dict:
         raise ValueError(f"{path}: split must be dev or test")
     if int(cfg["repetitions"]) < 1:
         raise ValueError(f"{path}: repetitions must be >= 1")
+    if int(cfg.get("warmup", 0)) < 0:
+        raise ValueError(f"{path}: warmup must be >= 0")
     if method == "adaptive":
         tau = cfg.get("tau")
         if isinstance(tau, bool) or not isinstance(tau, (int, float)) or not 0 <= tau <= 1:
@@ -96,8 +103,11 @@ def load_config(path: str | Path) -> dict:
         for key in ("config", "workers", "microbatch_size"):
             if key not in itr:
                 raise ValueError(f"{path}: missing 'itr.{key}'")
-        if int(itr["workers"]) != 1:
-            raise ValueError(f"{path}: parallel ITR needs the scheduler (Week 3); use workers: 1")
+        mode = itr.get("scheduler", "serial")
+        if mode not in MODES:
+            raise ValueError(f"{path}: itr.scheduler must be one of {MODES}")
+        if int(itr["workers"]) < 1 or (mode == "serial" and int(itr["workers"]) != 1):
+            raise ValueError(f"{path}: itr.workers must be >= 1, and 1 for the serial scheduler")
         if int(itr["microbatch_size"]) < 1:
             raise ValueError(f"{path}: itr.microbatch_size must be >= 1")
     return cfg
@@ -141,16 +151,20 @@ def run_experiment(
 
     engine_cfg = _engine_config(cfg, root)
     stamp = time.strftime("%Y%m%d-%H%M%S")
-    reps = int(cfg["repetitions"])
+    reps, warmups = int(cfg["repetitions"]), int(cfg.get("warmup", 0))
     run_dirs = []
-    for rep in range(1, reps + 1):
-        run_id = f"{cfg['experiment_name']}-{stamp}-r{rep}"
+    for kind, rep, total in [*(("w", k, warmups) for k in range(1, warmups + 1)),
+                             *(("r", k, reps) for k in range(1, reps + 1))]:
+        measured = kind == "r"
+        run_id = f"{cfg['experiment_name']}-{stamp}-{kind}{rep}"
         run_dir = root / cfg["output_root"] / run_id
-        log(f"[{run_id}] {cfg['method']} on {len(clusters)} clusters (repetition {rep}/{reps})")
+        log(f"[{run_id}] {cfg['method']} on {len(clusters)} clusters "
+            f"({'repetition' if measured else 'warm-up, not measured'} {rep}/{total})")
         _run_once(cfg, engine_cfg, clusters, splits, run_id, run_dir, rep, provenance,
-                  list(command), root, log)
-        run_dirs.append(run_dir)
-    return run_dirs
+                  list(command), root, log, measured)
+        if measured:
+            run_dirs.append(run_dir)
+    return run_dirs  # measured repetitions only
 
 
 def _engine_config(cfg: dict, root: Path) -> dict:
@@ -162,7 +176,7 @@ def _engine_config(cfg: dict, root: Path) -> dict:
 
 
 def _run_once(cfg, engine_cfg, clusters, splits, run_id, run_dir, rep, provenance,
-              command, root, log) -> None:
+              command, root, log, measured=True) -> None:
     run_dir.mkdir(parents=True, exist_ok=False)  # never reuse a run folder
     manifest = {
         "run_id": run_id,
@@ -170,6 +184,7 @@ def _run_once(cfg, engine_cfg, clusters, splits, run_id, run_dir, rep, provenanc
         "method": cfg["method"],
         "repetition": rep,
         "repetitions": int(cfg["repetitions"]),
+        "measured": measured,  # false for warm-up runs
         "command": command,
         "config": cfg,
         "engine_config": engine_cfg,
@@ -190,6 +205,9 @@ def _run_once(cfg, engine_cfg, clusters, splits, run_id, run_dir, rep, provenanc
         start, start_epoch = time.perf_counter(), time.time()
         run_method = {"bbs_only": _run_bbs, "itr_only": _run_itr, "adaptive": _run_adaptive}[cfg["method"]]
         records, timing, extra = run_method(cfg, engine_cfg, clusters, splits, run_id, run_dir, root, log)
+        if "scheduler" in extra:  # 8 workers on 4 physical cores share cores (hyper-threading)
+            physical = (provenance.get("hardware") or {}).get("physical_cores")
+            extra["scheduler"]["hyperthreaded"] = bool(physical) and extra["scheduler"]["workers"] > physical
         manifest.update(extra)
         stage_status = "failed" if any(t.status == "failed" for t in timing if t.kind == "stage") else "ok"
         timing.append(TimingRecord(run_id, "run", run_id, None, len(clusters), None, start_epoch,
@@ -227,14 +245,15 @@ def _run_bbs(cfg, engine_cfg, clusters, splits, run_id, run_dir, root, log):
 def _run_itr(cfg, engine_cfg, clusters, splits, run_id, run_dir, root, log):
     settings = ItrSettings.from_config(engine_cfg, root)
     non_empty = [c for c in clusters if not c.is_empty]
-    results, task_of, worker_of, failed, timing = _itr_stage(cfg, settings, non_empty, run_id, run_dir, log)
+    results, task_of, worker_of, failed, timing, sched = _itr_stage(cfg, settings, non_empty, run_id,
+                                                                     run_dir, log)
     records = [
         build_record(c, run_id=run_id, split=splits[c.cluster_id], method="itr_only",
                      itr=results.get(c.cluster_id), itr_task_id=task_of.get(c.cluster_id, ""),
                      itr_task_failed=c.cluster_id in failed, worker_id=worker_of.get(c.cluster_id))
         for c in clusters
     ]
-    return records, timing, {}
+    return records, timing, {"scheduler": sched}
 
 
 def _run_adaptive(cfg, engine_cfg, clusters, splits, run_id, run_dir, root, log):
@@ -253,8 +272,8 @@ def _run_adaptive(cfg, engine_cfg, clusters, splits, run_id, run_dir, root, log)
     log(f"[{run_id}] routed {len(routed)}/{len(clusters)} clusters to ITR (tau {tau})")
 
     to_itr = [c for c in clusters if c.cluster_id in routed]  # list order kept
-    itr, task_of, worker_of, itr_failed, itr_timing = _itr_stage(cfg, itr_settings, to_itr, run_id,
-                                                                 run_dir, log)
+    itr, task_of, worker_of, itr_failed, itr_timing, sched = _itr_stage(cfg, itr_settings, to_itr,
+                                                                        run_id, run_dir, log)
     timing += itr_timing
     records = [
         build_record(c, run_id=run_id, split=splits[c.cluster_id], method="adaptive",
@@ -267,7 +286,7 @@ def _run_adaptive(cfg, engine_cfg, clusters, splits, run_id, run_dir, root, log)
     ]
     routed_ids = "\n".join(c.cluster_id for c in to_itr)
     extra = {"tau": tau, "selector": selector, "n_routed": len(to_itr),
-             "routed_ids_sha256": hashlib.sha256(routed_ids.encode()).hexdigest()}
+             "routed_ids_sha256": hashlib.sha256(routed_ids.encode()).hexdigest(), "scheduler": sched}
     return records, timing, extra
 
 
@@ -304,43 +323,57 @@ def _bbs_stage(cfg, settings, clusters, run_id, run_dir, log):
 
 
 def _itr_stage(cfg, settings, to_run, run_id, run_dir, log):
-    """ITR on `to_run` (non-empty clusters) in micro-batches on one worker.
+    """ITR on `to_run` (non-empty clusters): micro-batches scheduled on `itr.workers` workers.
 
-    Returns results, task map, worker map, IDs of failed tasks' clusters, timing.
+    Returns results, task map, worker map, IDs of failed tasks' clusters, timing, and the
+    scheduler facts for the manifest. Task IDs are fixed by list position before the run.
     """
-    size = int(cfg["itr"]["microbatch_size"])
-    worker_id = 0  # one worker until the scheduler exists
+    itr_cfg = cfg["itr"]
+    size, workers = int(itr_cfg["microbatch_size"]), int(itr_cfg["workers"])
+    mode, seed = itr_cfg.get("scheduler", "serial"), int(itr_cfg.get("partition_seed", 0))
     raw = run_dir / "raw"
-    results, task_of, worker_of, failed, timing = {}, {}, {}, set(), []
+    tasks = [Task(f"t{i // size}", to_run[i:i + size],
+                  cost=sum(min(c.coverage, ITR_MAX_READS) ** 2 for c in to_run[i:i + size]))
+             for i in range(0, len(to_run), size)]
+    sizes = {t.task_id: len(t.items) for t in tasks}
     stage_start, stage_epoch = time.perf_counter(), time.time()
     done = 0
-    for i in range(0, len(to_run), size):
-        batch = to_run[i:i + size]
-        task_id = f"t{i // size}"
-        for c in batch:
-            task_of[c.cluster_id] = task_id
-            worker_of[c.cluster_id] = worker_id
-        started, t0 = time.time(), time.perf_counter()
-        try:
-            out = run_itr_batch(batch, settings, workdir=raw, task_id=task_id)
-        except ItrRunError as exc:
-            log(f"[{run_id}] ITR task {task_id} failed: {exc}")
-            failed.update(c.cluster_id for c in batch)
-            timing.append(TimingRecord(run_id, "itr_task", task_id, worker_id, len(batch), 1,
-                                       started, time.time(), (time.perf_counter() - t0) * 1000,
-                                       None, "failed"))
+
+    def run_task(task):
+        return run_itr_batch(list(task.items), settings, workdir=raw, task_id=task.task_id)
+
+    def progress(outcome):  # called under the scheduler's lock
+        nonlocal done
+        done += sizes[outcome.task_id]
+        if outcome.error is not None:
+            log(f"[{run_id}] ITR task {outcome.task_id} failed: {outcome.error}")
         else:
-            results.update((r.cluster_id, r) for r in out.results)
-            timing.append(timing_from_itr_batch(run_id, out, worker_id))
-            bad = [r for r in out.results if r.itr_failed]
+            bad = [r for r in outcome.result.results if r.itr_failed]
             if bad:
-                log(f"[{run_id}] {task_id}: " + ", ".join(f"{r.cluster_id} {r.status}" for r in bad))
-        done += len(batch)
-        log(f"[{run_id}] ITR {done}/{len(to_run)} clusters, "
-            f"{time.perf_counter() - stage_start:.0f} s")
-    timing.append(_stage(run_id, "itr", len(to_run), 1, stage_epoch, stage_start,
+                log(f"[{run_id}] {outcome.task_id}: " + ", ".join(f"{r.cluster_id} {r.status}" for r in bad))
+        log(f"[{run_id}] ITR {done}/{len(to_run)} clusters, {time.perf_counter() - stage_start:.0f} s")
+
+    outcomes, info = run_tasks(tasks, run_task, mode=mode, workers=workers, seed=seed,
+                               catch=(ItrRunError,), on_done=progress)
+    results, task_of, worker_of, failed, timing = {}, {}, {}, set(), []
+    for task, out in zip(tasks, outcomes):
+        for c in task.items:
+            task_of[c.cluster_id] = task.task_id
+            worker_of[c.cluster_id] = out.worker_id
+        if out.error is not None:
+            failed.update(c.cluster_id for c in task.items)
+            timing.append(TimingRecord(run_id, "itr_task", task.task_id, out.worker_id, len(task.items),
+                                       1, out.started_at, out.ended_at, out.wall_ms, None, "failed"))
+        else:
+            results.update((r.cluster_id, r) for r in out.result.results)
+            timing.append(timing_from_itr_batch(run_id, out.result, out.worker_id))
+    timing.append(_stage(run_id, "itr", len(to_run), workers, stage_epoch, stage_start,
                          "failed" if failed else "ok"))
-    return results, task_of, worker_of, failed, timing
+    sched = {"mode": mode, "workers": workers, "microbatch_size": size, "partition_seed": seed,
+             "n_tasks": info.n_tasks, "workers_used": info.workers_used,
+             "peak_concurrency": info.peak_concurrency, "partition": info.partition,
+             "busy_ms": {str(w): round(ms, 3) for w, ms in sorted(info.busy_ms.items())}}
+    return results, task_of, worker_of, failed, timing, sched
 
 
 def _stage(run_id, stage_id, n, threads, started_at, start, status) -> TimingRecord:

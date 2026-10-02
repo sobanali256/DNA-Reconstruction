@@ -95,7 +95,7 @@ def test_invalid_bbs_configs_rejected(tmp_path, change):
 
 
 @pytest.mark.parametrize("itr", [
-    {"config": "itr.yaml", "workers": 2, "microbatch_size": 1},  # needs the scheduler
+    {"config": "itr.yaml", "workers": 2, "microbatch_size": 1},  # serial scheduler needs 1 worker
     {"config": "itr.yaml", "workers": 1, "microbatch_size": 0},
     {"config": "itr.yaml", "workers": 1},
 ])
@@ -295,3 +295,48 @@ def test_adaptive_failed_bbs_shard_is_never_routed(root, fake_engines, monkeypat
     _, rows = run_adaptive(root, tau=1)
     assert fake_engines["seen"] == []
     assert all(r.failure_reason in ("bbs_shard_failed", "empty_cluster") for r in rows.values())
+
+
+# --- scheduler and warm-up in the runner (G5.2, G5.3, G5.6) -----------------------------
+
+@pytest.mark.parametrize("mode,workers", [("serial", 1), ("dynamic", 3), ("static", 3), ("static_lpt", 2)])
+def test_itr_scheduler_modes_cover_every_cluster_once(root, fake_engines, mode, workers):
+    cs = adaptive_clusters()
+    splits = {c.cluster_id: "dev" for c in cs}
+    cfg = config("itr_only", itr={"config": "itr.yaml", "workers": workers, "microbatch_size": 1,
+                                  "scheduler": mode, "partition_seed": 5})
+    (run_dir,) = run_experiment(cfg, cs, splits, root=root, log=lambda m: None)
+    assert sorted(fake_engines["seen"]) == ["c1", "c2", "c3", "c4"]  # G5.2: each once
+    rows = read_per_cluster(run_dir / "per_cluster.csv")
+    assert [r.cluster_id for r in rows] == [c.cluster_id for c in cs]
+    sched = json.loads((run_dir / "manifest.json").read_text())["scheduler"]
+    assert (sched["mode"], sched["workers"], sched["n_tasks"]) == (mode, workers, 4)
+    assert 1 <= sched["peak_concurrency"] <= workers  # G5.6
+    assert (sched["partition"] is None) == (mode in ("serial", "dynamic"))
+    task_rows = [t for t in read_timing(run_dir / "timing.csv") if t.kind == "itr_task"]
+    assert [t.id for t in task_rows] == ["t0", "t1", "t2", "t3"]
+    by_worker = {r.cluster_id: r.worker_id for r in rows if r.worker_id is not None}
+    assert set(by_worker.values()) <= set(range(workers))
+    if sched["partition"]:
+        assert all(by_worker[f"c{int(t[1:]) + 1}"] == int(w) for w, ids in sched["partition"].items() for t in ids)
+
+
+def test_warmup_runs_are_kept_but_not_returned(root, fake_engines):
+    cs = adaptive_clusters()
+    dirs = run_experiment(config("adaptive", warmup=1, repetitions=2), cs,
+                          {c.cluster_id: "dev" for c in cs}, root=root, log=lambda m: None)
+    assert [d.name[-3:] for d in dirs] == ["-r1", "-r2"]
+    (warm,) = [d for d in (root / "out").iterdir() if d.name.endswith("-w1")]
+    assert json.loads((warm / "manifest.json").read_text())["measured"] is False
+    assert json.loads((dirs[0] / "manifest.json").read_text())["measured"] is True
+
+
+def test_hyperthreaded_flag_from_physical_cores(root, fake_engines, monkeypatch):
+    monkeypatch.setattr(runner.prov, "provenance",
+                        lambda: {"project_dirty": False, "hardware": {"physical_cores": 2}})
+    cs = adaptive_clusters()
+    for workers, expected in ((2, False), (3, True)):
+        cfg = config("itr_only", experiment_name=f"w{workers}",
+                     itr={"config": "itr.yaml", "workers": workers, "microbatch_size": 1, "scheduler": "dynamic"})
+        (run_dir,) = run_experiment(cfg, cs, {c.cluster_id: "dev" for c in cs}, root=root, log=lambda m: None)
+        assert json.loads((run_dir / "manifest.json").read_text())["scheduler"]["hyperthreaded"] is expected
