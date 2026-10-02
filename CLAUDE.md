@@ -194,8 +194,10 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
   (+ `itr.scheduler/workers/partition_seed`, `warmup`), `scripts/run_scaling.py`,
   `analysis/scaling_summary.py`, `configs/final/`. Live adaptive dev run reproduces the cache
   exactly; gates G3.1–5, G5.1–7 pass (tests); smoke campaign complete.
-  **Next:** tag `methodology-freeze`; then Week 3: final test runs (`configs/final/adaptive_*`),
-  full scaling campaign (`configs/final/scaling.yaml`, overnight, timing protocol), figures.
+  **Methodology frozen** 2 Oct 2026: tag `methodology-freeze` on `ae7aa1d` (pushed). Any
+  change to τ, router, selectors, schedulers or the campaign after this is a method change.
+  **Next (Week 3):** final test runs (`configs/final/adaptive_*`), full scaling campaign
+  (`configs/final/scaling.yaml`, overnight, timing protocol), figures.
 - Sanity targets **verified** in the BBS paper (iScience 2025, Table 2, "Srinivasavaradhan
   et al." = Microsoft CNR, all 10,000 clusters, default parameters, beam 20): success rate
   (exact match) BBS 94.77%, ITR 87.58%, CPL 94.93%; ITR took 7,352 s (~0.74 s/cluster, i9-13900H).
