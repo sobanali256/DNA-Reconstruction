@@ -29,6 +29,8 @@ while i < len(lines):
         time.sleep(30)
     if cid.startswith("crash"):
         os.abort()
+    if cid.startswith("sigint"):
+        os.kill(os.getpid(), 2)  # as Ctrl-C does to the whole process group
     if cid.startswith("bad"):
         print("garbage", flush=True)
         continue
@@ -149,3 +151,9 @@ def test_cancel_stops_before_relaunching(fake, tmp_path):
     cancel.set()
     with pytest.raises(ItrRunError, match="cancelled"):
         run_itr_batch([rec("a")], fake, workdir=tmp_path, task_id="t1", cancel=cancel)
+
+
+def test_sigint_killed_wrapper_is_never_relaunched(fake, tmp_path):
+    """Ctrl-C kills the child before the scheduler can set `cancel`: no relaunch either way."""
+    with pytest.raises(ItrRunError, match="SIGINT"):
+        run_itr_batch([rec("a"), rec("sigint-1"), rec("b")], fake, workdir=tmp_path, task_id="t0")

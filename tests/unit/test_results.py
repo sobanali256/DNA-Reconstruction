@@ -243,3 +243,12 @@ def test_timing_round_trip(tmp_path):
     with pytest.raises(ValueError):
         write_timing([TimingRecord("r1", "bogus", "x", None, 0, None, None, None, 0.0, None, "ok")],
                      tmp_path / "t2.csv")
+
+
+def test_length_check_keeps_itr_when_bbs_has_no_output():
+    """After a failed BBS shard, ITR's answer is the only one, even with the wrong length."""
+    short = itr(seq=TRUTH[:-1])
+    r = build(method="adaptive", bbs_shard_failed=True, itr=short, selector="length_check")
+    assert (r.final_algorithm, r.status) == ("itr", "ok")
+    r = build(method="adaptive", bbs=bbs(), itr=short, selector="length_check")
+    assert r.final_algorithm == "bbs"

@@ -344,6 +344,7 @@ def _itr_stage(cfg, settings, to_run, run_id, run_dir, log):
                   cost=sum(min(c.coverage, ITR_MAX_READS) ** 2 for c in to_run[i:i + size]))
              for i in range(0, len(to_run), size)]
     sizes = {t.task_id: len(t.items) for t in tasks}
+    progress_lock = threading.Lock()  # on_done may run in several worker threads at once
     stage_start, stage_epoch = time.perf_counter(), time.time()
     done = 0
 
@@ -352,16 +353,18 @@ def _itr_stage(cfg, settings, to_run, run_id, run_dir, log):
     def run_task(task):
         return run_itr_batch(list(task.items), settings, workdir=raw, task_id=task.task_id, cancel=stop)
 
-    def progress(outcome):  # called under the scheduler's lock
+    def progress(outcome):
         nonlocal done
-        done += sizes[outcome.task_id]
+        with progress_lock:
+            done += sizes[outcome.task_id]
+            n_done = done
         if outcome.error is not None:
             log(f"[{run_id}] ITR task {outcome.task_id} failed: {outcome.error}")
         else:
             bad = [r for r in outcome.result.results if r.itr_failed]
             if bad:
                 log(f"[{run_id}] {outcome.task_id}: " + ", ".join(f"{r.cluster_id} {r.status}" for r in bad))
-        log(f"[{run_id}] ITR {done}/{len(to_run)} clusters, {time.perf_counter() - stage_start:.0f} s")
+        log(f"[{run_id}] ITR {n_done}/{len(to_run)} clusters, {time.perf_counter() - stage_start:.0f} s")
 
     outcomes, info = run_tasks(tasks, run_task, mode=mode, workers=workers, seed=seed,
                                catch=(ItrRunError,), on_done=progress, stop=stop)

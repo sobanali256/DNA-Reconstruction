@@ -85,13 +85,17 @@ def cascade_rows(df: pd.DataFrame, n_resamples: int, seed: int) -> list[dict]:
         row("auroc", "n_bbs_wrong", int(is_wrong.sum())),
     ]
     if is_wrong.sum() < MIN_FAILURES_FOR_AUROC:
-        rows.append(row("auroc", "confidence", None, f"fewer than {MIN_FAILURES_FOR_AUROC} BBS failures"))
-    elif is_wrong.sum() < len(scored):
-        for name, column in (("confidence", "bbs_confidence"), ("path_weight", "bbs_path_weight")):
-            auc, low, high = failure_auroc(is_wrong, -scored[column], n_resamples, seed)
-            rows += [row("auroc", name, auc, "lower value = predicted failure"),
-                     row("auroc", f"{name}_ci95_low", low, f"bootstrap BCa, {n_resamples} resamples"),
-                     row("auroc", f"{name}_ci95_high", high)]
+        skip = f"not computed: fewer than {MIN_FAILURES_FOR_AUROC} BBS failures"
+    elif is_wrong.sum() == len(scored):
+        skip = "not computed: every cluster wrong"
+    else:
+        skip = None
+    for name, column in (("confidence", "bbs_confidence"), ("path_weight", "bbs_path_weight")):
+        # same rows in every group, blank with a note when not computable
+        auc, low, high = (None, None, None) if skip else failure_auroc(is_wrong, -scored[column], n_resamples, seed)
+        rows += [row("auroc", name, auc, skip or "lower value = predicted failure"),
+                 row("auroc", f"{name}_ci95_low", low, skip or f"bootstrap BCa, {n_resamples} resamples"),
+                 row("auroc", f"{name}_ci95_high", high, skip or "")]
     return rows
 
 

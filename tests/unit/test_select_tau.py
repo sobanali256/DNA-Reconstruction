@@ -39,8 +39,16 @@ def test_bbs_only_when_nothing_beats_it():
 @pytest.mark.parametrize("split,ok", [("dev", True), ("test", False), (None, False)])
 def test_only_dev_runs_are_accepted(tmp_path, split, ok):
     (tmp_path / "manifest.json").write_text(json.dumps({"config": {"split": split}}))
+    (tmp_path / "per_cluster.csv").write_text("cluster_id,split\nc1,dev\n")
     if ok:
         check_dev_run(tmp_path)
     else:
         with pytest.raises(SystemExit):
             check_dev_run(tmp_path)
+
+
+def test_dev_manifest_with_test_rows_is_rejected(tmp_path):
+    (tmp_path / "manifest.json").write_text(json.dumps({"config": {"split": "dev"}}))
+    (tmp_path / "per_cluster.csv").write_text("cluster_id,split\nc1,dev\nc2,test\n")
+    with pytest.raises(SystemExit, match="τ is chosen on dev only"):
+        check_dev_run(tmp_path)

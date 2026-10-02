@@ -117,6 +117,21 @@ def summarize(scores: Sequence[ClusterScore]) -> MetricSummary:
     )
 
 
+def itr_selected(itr_ok, has_bbs, itr_length, expected_length, selector: str):
+    """Whether the final answer is ITR's: the selection rule shared by the live pipeline
+    (dnarecon.results.build_record, scalars) and the cache simulation (cascade_outcome, Series).
+
+    default: a successful ITR result wins. length_check: also keep BBS when ITR's output
+    length differs from the designed length, but only if BBS has an output to keep (after a
+    failed BBS shard, ITR's answer is the only one). Uses no ground truth.
+    """
+    if selector == "default":
+        return itr_ok
+    if selector != "length_check":
+        raise ValueError(f"unknown selector {selector!r}")
+    return itr_ok & ((has_bbs & (itr_length != expected_length)) == False)  # noqa: E712 (Series too)
+
+
 def cascade_outcome(df: pd.DataFrame, tau: float, length_check: bool = False) -> dict:
     """The adaptive pipeline at threshold `tau`, simulated from cached BBS and ITR results.
 
@@ -124,17 +139,15 @@ def cascade_outcome(df: pd.DataFrame, tau: float, length_check: bool = False) ->
     itr_sequence, itr_exact_match, itr_edit_distance, itr_runtime_ms, expected_length.
     Routing as dnarecon.router: BBS confidence < tau; a cluster whose BBS shard failed
     (bbs_status shard_failed) counts as confidence 0; an empty cluster never routes.
-    Selection copies dnarecon.results.build_record: a successful ITR result wins, else BBS.
-    `length_check` (label-free variant) also keeps BBS when ITR's output length differs
-    from the designed length. Benefit/harm compare the final edit distance with BBS's
+    Selection: itr_selected, the same rule as dnarecon.results.build_record. Benefit/harm compare the final edit distance with BBS's
     among routed clusters, so an ITR failure (BBS kept) counts as unchanged.
     """
     routed = df.bbs_confidence < tau
     if "bbs_status" in df:  # no BBS output (failed shard) = confidence 0
         routed |= df.bbs_status.eq("shard_failed") & (tau > 0)
-    use_itr = routed & df.itr_failed.eq(False)
-    if length_check:
-        use_itr &= df.itr_sequence.str.len().eq(df.expected_length)
+    has_bbs = df.bbs_status.eq("ok") if "bbs_status" in df else df.bbs_confidence.notna()
+    use_itr = itr_selected(routed & df.itr_failed.eq(False), has_bbs, df.itr_sequence.str.len(),
+                           df.expected_length, "length_check" if length_check else "default")
     bbs_ok = df.bbs_exact_match.astype(bool)
     final_ok = df.itr_exact_match.where(use_itr, bbs_ok).astype(bool)
     final_ed = df.itr_edit_distance.where(use_itr, df.bbs_edit_distance)

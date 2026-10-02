@@ -56,23 +56,32 @@ def test_invalid_cell_is_rejected_before_running():
 
 
 def test_summary_uses_one_invocation_only(tmp_path):
-    def manifest(run_id, invocation, status="complete", measured=True):
+    def manifest(run_id, invocation, cell="serial_p1", status="complete", measured=True, dirty=False,
+                 run_status="ok"):
         d = tmp_path / run_id
         d.mkdir()
-        camp = {"name": "camp", "invocation": invocation, "measured": measured}
+        camp = {"name": "camp", "invocation": invocation, "cell": cell, "measured": measured}
         (d / "manifest.json").write_text(json.dumps(
-            {"run_id": run_id, "status": status, "measured": measured, "config": {"campaign": camp}}))
-        (d / "timing.csv").write_text("kind,status\nstage,ok\nrun," + ("failed" if run_id == "b4" else "ok") + "\n")
+            {"run_id": run_id, "status": status, "measured": measured, "config": {"campaign": camp},
+             "provenance": {"project_dirty": dirty}}))
+        (d / "timing.csv").write_text(f"kind,status\nstage,{run_status}\nrun,{run_status}\n")
 
-    manifest("a1", "20261002-100000")
-    manifest("b1", "20261002-120000")
-    manifest("b2", "20261002-120000", status="failed")
+    expected = {"serial_p1": 1, "dynamic_p2": 1}
+    manifest("a1", "20261002-100000")                       # complete launch
+    manifest("a2", "20261002-100000", cell="dynamic_p2")
+    manifest("b1", "20261002-120000")                       # later launch, aborted after one run
+    manifest("b2", "20261002-120000", cell="dynamic_p2", status="failed")
     manifest("b3", "20261002-120000", measured=False)
-    manifest("b4", "20261002-120000")  # a stage failed (e.g. a BBS shard): workload changed
-    manifest("other", "20261002-120000")
-    (tmp_path / "other" / "manifest.json").write_text(json.dumps({"run_id": "other", "config": {}}))
-    used, skipped, inv = campaign_runs(tmp_path, "camp", None)
-    assert inv == "20261002-120000" and [m["run_id"] for m in used] == ["b1"]
-    assert len(skipped) == 4  # a1 (older launch), b2 (failed), b3 (warm-up), b4 (failed stage)
-    used, _, inv = campaign_runs(tmp_path, "camp", "20261002-100000")
-    assert [m["run_id"] for m in used] == ["a1"]
+    manifest("b4", "20261002-120000", cell="dynamic_p2", run_status="failed")  # a stage failed
+    manifest("c1", "20261002-130000", dirty=True)           # --allow-dirty launch
+    manifest("c2", "20261002-130000", cell="dynamic_p2", dirty=True)
+    (tmp_path / "x").mkdir()
+    (tmp_path / "x" / "manifest.json").write_text(json.dumps({"run_id": "x", "config": {}}))  # other campaign
+
+    used, skipped, inv = campaign_runs(tmp_path, "camp", None, expected)
+    assert inv == "20261002-100000" and sorted(m["run_id"] for m in used) == ["a1", "a2"]  # latest complete
+    why = dict(s.split(" ", 1) for s in skipped)
+    assert "failed" in why["b2"] and "warm-up" in why["b3"] and "stage failed" in why["b4"]
+    assert "dirty" in why["c1"] and "other invocation" in why["b1"]
+    used, _, inv = campaign_runs(tmp_path, "camp", "20261002-120000", expected)
+    assert [m["run_id"] for m in used] == ["b1"]  # explicit choice, incomplete (main stops on G8.1)

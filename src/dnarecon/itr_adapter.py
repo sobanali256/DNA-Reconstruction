@@ -23,6 +23,7 @@ from different threads as long as each task has its own task_id.
 from __future__ import annotations
 
 import queue
+import signal
 import subprocess
 import threading
 import time
@@ -187,6 +188,8 @@ def _run_once(pending: list[ClusterRecord], settings: ItrSettings, input_path: P
                 returncode = stop()
                 if returncode == EXIT_MALFORMED_INPUT:
                     raise ItrRunError(f"wrapper rejected the input {input_path} (exit 2)")
+                if returncode == -signal.SIGINT:  # Ctrl-C reached the child: the run is being
+                    raise ItrRunError("wrapper interrupted by SIGINT")  # aborted, never relaunch
                 elapsed = (time.monotonic() - window_start) * 1000
                 results.append(_failed(record, CRASHED, elapsed,
                                        f"wrapper exited with {returncode} during this cluster"))

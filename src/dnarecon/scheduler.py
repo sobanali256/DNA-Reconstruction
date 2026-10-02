@@ -103,7 +103,10 @@ def run_tasks(
     on_done: Callable[[TaskOutcome], None] | None = None,
     stop: threading.Event | None = None,
 ) -> tuple[list[TaskOutcome], ScheduleInfo]:
-    """Run fn(task) for every task; outcomes come back in task order, with scheduling facts."""
+    """Run fn(task) for every task; outcomes come back in task order, with scheduling facts.
+
+    `on_done` is called after each task, possibly from several worker threads at once.
+    """
     if mode not in MODES:
         raise ValueError(f"unknown scheduler mode {mode!r}")
     if workers < 1 or (mode == "serial" and workers != 1):
@@ -136,8 +139,8 @@ def run_tasks(
         out = TaskOutcome(task.task_id, worker_id, result, error, started, time.time(), wall)
         with lock:
             outcomes[task.task_id] = out
-            if on_done is not None:
-                on_done(out)
+        if on_done is not None:  # outside the lock: slow logging must not hold up other workers
+            on_done(out)
 
     if mode == "serial":
         try:

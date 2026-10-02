@@ -38,9 +38,13 @@ def select_tau(sweep: pd.DataFrame, tolerance: float) -> pd.Series:
 
 
 def check_dev_run(run_dir: Path) -> None:
+    """Stop unless the run is a dev run by its manifest AND holds no non-dev cluster (G7.5)."""
     split = json.loads((run_dir / "manifest.json").read_text())["config"].get("split")
     if split != "dev":
         sys.exit(f"{run_dir.name}: not a dev run (split={split!r}); τ is chosen on dev only")
+    rows = set(pd.read_csv(run_dir / "per_cluster.csv", usecols=["split"]).split)
+    if rows != {"dev"}:
+        sys.exit(f"{run_dir.name}: per_cluster.csv holds splits {sorted(rows)}; τ is chosen on dev only")
 
 
 def family_rows(name: str, fam: dict, taus: list[float], tolerance: float) -> list[dict]:
@@ -48,8 +52,8 @@ def family_rows(name: str, fam: dict, taus: list[float], tolerance: float) -> li
     for run_dir in (bbs_dir, fb_dir):
         check_dev_run(run_dir)
     df, _, method = load_cache(bbs_dir, fb_dir, "dev")
-    if method != "itr_only" or not df.split.eq("dev").all():
-        sys.exit(f"{name}: need dev BBS-only and ITR-only runs")
+    if method != "itr_only":
+        sys.exit(f"{name}: need a BBS-only and an ITR-only dev run")
     group_by = fam.get("group_by")
     rows = []
     for group, g in groups(df, group_by):

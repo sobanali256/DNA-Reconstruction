@@ -174,3 +174,12 @@ def test_cascade_routes_failed_bbs_shard_like_the_router():
     assert (out["n_routed"], out["rescued"]) == (1, 1)  # only the failed shard; ITR right
     assert cascade_outcome(df, 0)["n_routed"] == 0
     assert cascade_outcome(df, 1.0)["n_routed"] == 5  # e (empty) still never
+
+
+def test_length_check_cache_matches_live_rule_after_bbs_failure():
+    """Same rule as build_record (finding of the 2 Oct review): no BBS output -> ITR kept."""
+    df = CACHE.assign(bbs_status="ok")
+    df.loc[5, ["bbs_status", "bbs_confidence", "bbs_edit_distance"]] = ["shard_failed", None, 4]  # f: ITR 'ACG'
+    assert cascade_outcome(df, 0.1)["n_routed"] == 1
+    out = cascade_outcome(df, 0.1, length_check=True)
+    assert out["n_routed"] == 1 and out["benefit_rate"] == 1.0  # ITR (ED 1) beats no output

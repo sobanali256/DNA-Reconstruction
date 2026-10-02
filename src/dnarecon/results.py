@@ -27,7 +27,7 @@ from typing import Iterable, Sequence, get_args, get_origin, get_type_hints
 
 from dnarecon.bbs_adapter import BbsClusterResult, BbsShardResult
 from dnarecon.itr_adapter import ItrBatchResult, ItrClusterResult
-from dnarecon.metrics import score_cluster
+from dnarecon.metrics import itr_selected, score_cluster
 from dnarecon.models import ClusterRecord, ResultRecord
 
 METHODS = ("bbs_only", "itr_only", "adaptive")
@@ -103,9 +103,8 @@ def build_record(
             itr_status = "not_routed" if method == "adaptive" else "not_run"
 
     itr_ok = itr is not None and not itr.itr_failed
-    length_rejected = (selector == "length_check" and itr_ok and bbs is not None
-                       and len(itr.sequence) != cluster.expected_length)
-    if itr_ok and not length_rejected:
+    if bool(itr_selected(itr_ok, bbs is not None, len(itr.sequence) if itr_ok else None,
+                         cluster.expected_length, selector)):
         final_sequence, final_algorithm = itr.sequence, "itr"
     elif bbs is not None:
         final_sequence, final_algorithm = bbs.sequence, "bbs"

@@ -3,9 +3,9 @@
     .venv/bin/python analysis/scaling_summary.py configs/scaling_smoke.yaml
 
 Finds the campaign's run folders by the `campaign` block in their manifests and keeps one
-invocation of scripts/run_scaling.py (the latest, or --invocation), measured complete runs
-whose stages all succeeded only (a failed BBS shard or ITR task changes the workload; G8.6);
-everything else is listed as not used. Stops unless every cell has all its
+invocation of scripts/run_scaling.py (the latest complete one, or --invocation): measured,
+complete runs from a clean tree whose stages all succeeded (a failed BBS shard or ITR task
+changes the workload; G8.6). Everything else is listed as not used, with the reason. Stops unless every cell has all its
 repetitions (G8.1; --allow-incomplete only to inspect a partial campaign) and every run
 used the same code, dataset files, cluster list, clusters and routed set (G8.3).
 Per run (from timing.csv and the manifest):
@@ -39,37 +39,54 @@ SAME_WORKLOAD = ("project_commit", "clusters_file_sha256", "dataset_files_sha256
                  "routed_ids_sha256")  # G8.3: T1 and Tp on the identical workload and code
 
 
-def campaign_runs(output_root: Path, name: str, invocation: str | None) -> tuple[list[dict], list[str], str]:
-    """(manifests of the chosen invocation's measured complete runs, other folders, invocation)."""
+def campaign_runs(output_root: Path, name: str, invocation: str | None,
+                  expected: dict[str, int]) -> tuple[list[dict], list[str], str | None]:
+    """(usable runs of the chosen invocation, why every other campaign folder is not used, invocation).
+
+    Usable = measured, complete, clean tree, every stage succeeded (timing.csv is read once
+    and kept in "_timing"). `expected` maps cell -> repetitions. Without `invocation`, the
+    latest launch whose usable runs cover every cell exactly is chosen (an aborted later
+    launch cannot hide a complete one); failing that, the latest launch with usable runs.
+    """
     found = []
     for path in sorted(output_root.glob("*/manifest.json")):
         m = json.loads(path.read_text())
         camp = (m.get("config") or {}).get("campaign") or {}
         if camp.get("name") == name:
             found.append({**m, "_dir": path.parent, "_camp": camp})
-    invocations = sorted({m["_camp"].get("invocation") for m in found} - {None})
-    if invocation is None and invocations:
-        invocation = invocations[-1]  # the latest launch
-    used, skipped = [], []
+    usable, reasons = {}, {}
     for m in found:
-        ok = (m["_camp"].get("invocation") == invocation and m.get("status") == "complete"
-              and m.get("measured", True) and m["_camp"].get("measured", True))
-        stages = stages_status(m["_dir"]) if m.get("status") == "complete" else "-"
-        ok = ok and stages == "ok"
-        (used.append(m) if ok else skipped.append(
-            f"{m['run_id']} (invocation {m['_camp'].get('invocation')}, {m.get('status')}, "
-            f"stages {stages}, measured={m.get('measured')})"))
+        if m.get("status") != "complete":
+            reasons[m["run_id"]] = m.get("status")
+        elif not (m.get("measured", True) and m["_camp"].get("measured", True)):
+            reasons[m["run_id"]] = "warm-up"
+        elif (m.get("provenance") or {}).get("project_dirty", False):
+            reasons[m["run_id"]] = "dirty tree: not traceable to a commit"
+        else:
+            m["_timing"] = pd.read_csv(m["_dir"] / "timing.csv")
+            if m["_timing"].loc[m["_timing"].kind == "run", "status"].iloc[0] != "ok":
+                reasons[m["run_id"]] = "a stage failed (G8.6)"
+            else:
+                usable.setdefault(m["_camp"].get("invocation"), []).append(m)
+
+    def complete(runs: list[dict]) -> bool:
+        counts: dict[str, int] = {}
+        for m in runs:
+            counts[m["_camp"]["cell"]] = counts.get(m["_camp"]["cell"], 0) + 1
+        return counts == expected
+
+    if invocation is None:
+        launches = sorted(usable, key=lambda inv: (inv is not None, inv or ""))  # legacy (None) first
+        full = [inv for inv in launches if complete(usable[inv])]
+        invocation = full[-1] if full else (launches[-1] if launches else None)
+    used = usable.get(invocation, [])
+    skipped = [f"{m['run_id']} (invocation {m['_camp'].get('invocation')}: "
+               f"{reasons.get(m['run_id'], 'other invocation')})" for m in found if m not in used]
     return used, skipped, invocation
 
 
-def stages_status(run_dir: Path) -> str:
-    """'ok' when every stage of the run succeeded (the run row of timing.csv), else 'failed'."""
-    timing = pd.read_csv(run_dir / "timing.csv")
-    return timing.loc[timing.kind == "run", "status"].iloc[0]
-
-
 def run_row(m: dict) -> dict:
-    timing = pd.read_csv(m["_dir"] / "timing.csv")
+    timing = m["_timing"]
     stage = timing[timing.kind == "stage"].set_index("id").wall_time_ms
     tasks = timing[timing.kind == "itr_task"]
     sched = m["scheduler"]
@@ -123,13 +140,16 @@ def cell_rows(runs: pd.DataFrame) -> pd.DataFrame:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("config", type=Path)
-    parser.add_argument("--invocation", help="run_scaling.py launch to summarize (default: the latest)")
+    parser.add_argument("--invocation", help="run_scaling.py launch to summarize "
+                                             "(default: the latest complete one)")
     parser.add_argument("--allow-incomplete", action="store_true",
                         help="inspect a partial campaign (cells without all repetitions); not for reporting")
     args = parser.parse_args()
     camp = yaml.safe_load(args.config.read_text())
     base = campaign_base(camp)  # with overrides: the output_root the runs were written to
-    used, skipped, invocation = campaign_runs(ROOT / base["output_root"], camp["campaign"], args.invocation)
+    expected = {f"{c['scheduler']}_p{w}": int(camp["repetitions"]) for c in camp["cells"] for w in c["workers"]}
+    used, skipped, invocation = campaign_runs(ROOT / base["output_root"], camp["campaign"], args.invocation,
+                                              expected)
     for s in skipped:
         print(f"not used: {s}")
     if not used:
@@ -138,9 +158,8 @@ def main() -> None:
     for key in SAME_WORKLOAD:
         if runs[key].nunique() != 1:
             sys.exit(f"runs differ in {key}: not one workload (G8.3)")
-    expected = {f"{c['scheduler']}_p{w}" for c in camp["cells"] for w in c["workers"]}
     counts = runs.cell.value_counts()
-    incomplete = {c: int(counts.get(c, 0)) for c in expected | set(counts.index)
+    incomplete = {c: int(counts.get(c, 0)) for c in set(expected) | set(counts.index)
                   if counts.get(c, 0) != camp["repetitions"]}
     if incomplete:  # G8.1: never average an incomplete campaign into reported numbers
         msg = f"cells without exactly {camp['repetitions']} repetitions: {incomplete}"

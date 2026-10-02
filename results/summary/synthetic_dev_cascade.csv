@@ -59,7 +59,12 @@ synthetic_e03_c10,rescue,bbs_exact_rate,1.0,
 synthetic_e03_c10,rescue,oracle_exact_rate,1.0,either engine exact: ceiling of any selector
 synthetic_e03_c10,auroc,n_clusters,300,clusters with BBS output; empty clusters excluded
 synthetic_e03_c10,auroc,n_bbs_wrong,0,
-synthetic_e03_c10,auroc,confidence,,fewer than 5 BBS failures
+synthetic_e03_c10,auroc,confidence,,not computed: fewer than 5 BBS failures
+synthetic_e03_c10,auroc,confidence_ci95_low,,not computed: fewer than 5 BBS failures
+synthetic_e03_c10,auroc,confidence_ci95_high,,not computed: fewer than 5 BBS failures
+synthetic_e03_c10,auroc,path_weight,,not computed: fewer than 5 BBS failures
+synthetic_e03_c10,auroc,path_weight_ci95_low,,not computed: fewer than 5 BBS failures
+synthetic_e03_c10,auroc,path_weight_ci95_high,,not computed: fewer than 5 BBS failures
 synthetic_e03_c20,two_by_two,bbs_right_fallback_right,300,
 synthetic_e03_c20,two_by_two,bbs_right_fallback_wrong,0,
 synthetic_e03_c20,two_by_two,bbs_wrong_fallback_right,0,
@@ -76,7 +81,12 @@ synthetic_e03_c20,rescue,bbs_exact_rate,1.0,
 synthetic_e03_c20,rescue,oracle_exact_rate,1.0,either engine exact: ceiling of any selector
 synthetic_e03_c20,auroc,n_clusters,300,clusters with BBS output; empty clusters excluded
 synthetic_e03_c20,auroc,n_bbs_wrong,0,
-synthetic_e03_c20,auroc,confidence,,fewer than 5 BBS failures
+synthetic_e03_c20,auroc,confidence,,not computed: fewer than 5 BBS failures
+synthetic_e03_c20,auroc,confidence_ci95_low,,not computed: fewer than 5 BBS failures
+synthetic_e03_c20,auroc,confidence_ci95_high,,not computed: fewer than 5 BBS failures
+synthetic_e03_c20,auroc,path_weight,,not computed: fewer than 5 BBS failures
+synthetic_e03_c20,auroc,path_weight_ci95_low,,not computed: fewer than 5 BBS failures
+synthetic_e03_c20,auroc,path_weight_ci95_high,,not computed: fewer than 5 BBS failures
 synthetic_e06_c05,two_by_two,bbs_right_fallback_right,183,
 synthetic_e06_c05,two_by_two,bbs_right_fallback_wrong,11,
 synthetic_e06_c05,two_by_two,bbs_wrong_fallback_right,86,
@@ -115,7 +125,12 @@ synthetic_e06_c10,rescue,bbs_exact_rate,0.99,
 synthetic_e06_c10,rescue,oracle_exact_rate,1.0,either engine exact: ceiling of any selector
 synthetic_e06_c10,auroc,n_clusters,300,clusters with BBS output; empty clusters excluded
 synthetic_e06_c10,auroc,n_bbs_wrong,3,
-synthetic_e06_c10,auroc,confidence,,fewer than 5 BBS failures
+synthetic_e06_c10,auroc,confidence,,not computed: fewer than 5 BBS failures
+synthetic_e06_c10,auroc,confidence_ci95_low,,not computed: fewer than 5 BBS failures
+synthetic_e06_c10,auroc,confidence_ci95_high,,not computed: fewer than 5 BBS failures
+synthetic_e06_c10,auroc,path_weight,,not computed: fewer than 5 BBS failures
+synthetic_e06_c10,auroc,path_weight_ci95_low,,not computed: fewer than 5 BBS failures
+synthetic_e06_c10,auroc,path_weight_ci95_high,,not computed: fewer than 5 BBS failures
 synthetic_e06_c10_hp50,two_by_two,bbs_right_fallback_right,169,
 synthetic_e06_c10_hp50,two_by_two,bbs_right_fallback_wrong,83,
 synthetic_e06_c10_hp50,two_by_two,bbs_wrong_fallback_right,5,
@@ -154,7 +169,12 @@ synthetic_e06_c20,rescue,bbs_exact_rate,1.0,
 synthetic_e06_c20,rescue,oracle_exact_rate,1.0,either engine exact: ceiling of any selector
 synthetic_e06_c20,auroc,n_clusters,300,clusters with BBS output; empty clusters excluded
 synthetic_e06_c20,auroc,n_bbs_wrong,0,
-synthetic_e06_c20,auroc,confidence,,fewer than 5 BBS failures
+synthetic_e06_c20,auroc,confidence,,not computed: fewer than 5 BBS failures
+synthetic_e06_c20,auroc,confidence_ci95_low,,not computed: fewer than 5 BBS failures
+synthetic_e06_c20,auroc,confidence_ci95_high,,not computed: fewer than 5 BBS failures
+synthetic_e06_c20,auroc,path_weight,,not computed: fewer than 5 BBS failures
+synthetic_e06_c20,auroc,path_weight_ci95_low,,not computed: fewer than 5 BBS failures
+synthetic_e06_c20,auroc,path_weight_ci95_high,,not computed: fewer than 5 BBS failures
 synthetic_e09_c05,two_by_two,bbs_right_fallback_right,46,
 synthetic_e09_c05,two_by_two,bbs_right_fallback_wrong,9,
 synthetic_e09_c05,two_by_two,bbs_wrong_fallback_right,168,
@@ -215,7 +235,12 @@ synthetic_e09_c20,rescue,bbs_exact_rate,0.9967,
 synthetic_e09_c20,rescue,oracle_exact_rate,1.0,either engine exact: ceiling of any selector
 synthetic_e09_c20,auroc,n_clusters,300,clusters with BBS output; empty clusters excluded
 synthetic_e09_c20,auroc,n_bbs_wrong,1,
-synthetic_e09_c20,auroc,confidence,,fewer than 5 BBS failures
+synthetic_e09_c20,auroc,confidence,,not computed: fewer than 5 BBS failures
+synthetic_e09_c20,auroc,confidence_ci95_low,,not computed: fewer than 5 BBS failures
+synthetic_e09_c20,auroc,confidence_ci95_high,,not computed: fewer than 5 BBS failures
+synthetic_e09_c20,auroc,path_weight,,not computed: fewer than 5 BBS failures
+synthetic_e09_c20,auroc,path_weight_ci95_low,,not computed: fewer than 5 BBS failures
+synthetic_e09_c20,auroc,path_weight_ci95_high,,not computed: fewer than 5 BBS failures
 synthetic_e12_c05,two_by_two,bbs_right_fallback_right,6,
 synthetic_e12_c05,two_by_two,bbs_right_fallback_wrong,4,
 synthetic_e12_c05,two_by_two,bbs_wrong_fallback_right,115,
