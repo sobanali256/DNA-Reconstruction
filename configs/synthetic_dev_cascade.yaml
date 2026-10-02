@@ -1,0 +1,16 @@
+# Week 2: the Day 4 analyses (2x2, failure AUROC, tau sweep, ITR failure modes) per
+# synthetic-grid condition, on the dev split.
+#   .venv/bin/python analysis/cascade_from_cache.py configs/synthetic_dev_cascade.yaml
+#   .venv/bin/python analysis/itr_failure_modes.py configs/synthetic_dev_cascade.yaml
+# Paths are relative to the repository root. Dev clusters only: tau is chosen on dev.
+bbs_run: results/synthetic_dev_bbs-20261001-223625-r1   # canonical BBS run (synthetic_dev_bbs)
+fallback_run: results/synthetic_dev_itr-20261001-223644-r1   # ITR-only run (synthetic_dev_itr)
+split: dev
+dataset: configs/dataset_synthetic.yaml   # ground truth + reads, for itr_failure_modes.py only
+group_by: dataset_id   # one block per condition, after the pooled group "all"
+# Route to ITR iff BBS confidence < tau. Same grid as Microsoft so the families compare.
+taus: [0, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99, 1.0]
+bootstrap:            # 95% CI of the AUROC
+  n_resamples: 2000
+  seed: 20261001
+output_prefix: results/summary/synthetic_dev   # writes <prefix>_cascade.csv, _tau_sweep.csv, _itr_failure_modes.csv

@@ -306,3 +306,63 @@ this from the other side (dev exact per condition, from the cache runs): with in
 ITR beats BBS at low coverage / high error, and adding homopolymer shortening
 (`e06_c10_hp50`) drops ITR from 100% to 58% while BBS keeps 84%. The per-condition
 cascade analysis of the synthetic grid is the first Week 2 task.
+
+## Day 8 (2 Oct 2026): synthetic grid, per condition (dev, 13 × 300 clusters)
+
+Same analyses as Day 7, per `dataset_id` plus a pooled group "all" (config key `group_by`):
+
+```bash
+.venv/bin/python analysis/cascade_from_cache.py configs/synthetic_dev_cascade.yaml
+.venv/bin/python analysis/itr_failure_modes.py configs/synthetic_dev_cascade.yaml
+```
+
+Runs `synthetic_dev_bbs-20261001-223625-r1`, `synthetic_dev_itr-20261001-223644-r1`. Tables:
+`results/summary/synthetic_dev_{cascade,tau_sweep,itr_failure_modes}.csv`. The Microsoft and
+pilot tables regenerate byte-identical with the grouped code. AUROC is not computed for a
+condition with fewer than 5 BBS failures (5 of 13 conditions); for `e03_c05` (8 failures)
+the BCa interval is degenerate and left empty.
+
+### 2×2 and confidence per condition
+
+| Condition | BBS exact | ITR exact | Rescued / BBS wrong | Harmed | Confidence AUROC |
+|---|---|---|---|---|---|
+| e03_c05 | 97.3% | 95.3% | 6 / 8 | 12 | 0.977 |
+| e03_c10, e03_c20, e06_c20 | 100% | 100% | – | 0 | – |
+| e06_c05 | 64.7% | 89.7% | 86 / 106 (81%) | 11 | 0.826 |
+| e06_c10 | 99.0% | 100% | 3 / 3 | 0 | – |
+| **e06_c10_hp50** | 84.0% | 58.0% | **5 / 48 (10%)** | **83** | 0.869 |
+| e09_c05 | 18.3% | 70.7% | 168 / 245 (69%) | 9 | 0.763 |
+| e09_c10 | 84.3% | 99.7% | 46 / 47 (98%) | 0 | 0.841 |
+| e09_c20 | 99.7% | 100% | 1 / 1 | 0 | – |
+| e12_c05 | 3.3% | 39.7% | 115 / 290 (40%) | 4 | 0.727 |
+| e12_c10 | 41.0% | 98.7% | 175 / 177 (99%) | 0 | 0.811 |
+| e12_c20 | 94.3% | 100% | 17 / 17 | 0 | 0.915 |
+| **Pooled** | 75.8% | 88.6% | **622 / 942 (66%, CI 63–69%)** | 119 | **0.944** (0.934–0.953) |
+
+- With independent IDS errors **ITR rescues most BBS failures** (66% pooled, vs 13% on
+  Microsoft), and almost all of them once coverage is ≥ 10. Rescue is limited only at
+  coverage 5 with high error, where neither engine has enough reads.
+- **The homopolymer condition reproduces the Microsoft pattern**: rescue 10%, ITR harms 83
+  clusters; 98% of harmed outputs have the wrong length, 99% of their errors lie in long
+  runs, and in 97% of the read-checked harmed clusters most reads shorten the run (Microsoft
+  full dev: 92%, 72%, 97%). This is direct evidence for the Day 4 explanation.
+- Outside `hp50`, harm happens only at coverage 5 (36 clusters), and 89–100% of those ITR
+  outputs have the wrong length.
+- Confidence predicts BBS failure well pooled (0.944) and in every condition with enough
+  failures (0.73–0.98); it is weakest where errors are high and reads few.
+
+### τ sweep (pooled exact rate, 3,900 clusters)
+
+| τ | 0 | 0.5 | 0.6 | 0.7 | 0.8 | 0.9 | 0.95 | 0.99 | 1.0 |
+|---|---|---|---|---|---|---|---|---|---|
+| Routed | 0% | 17% | 23% | 27% | 31% | 38% | 45% | 61% | 100% |
+| Default | 75.8% | 85.0% | 87.0% | 88.4% | 88.8% | **89.0%** | 88.8% | 88.5% | 88.6% |
+| Length check | 75.8% | 85.5% | 87.9% | 89.4% | 90.1% | 90.9% | 91.2% | 91.4% | **91.6%** |
+
+- **The cascade beats both engines alone on synthetic data**: default selector 89.0% at
+  τ = 0.9 with 38% of clusters routed, vs BBS 75.8% and ITR-only 88.6%. Oracle 91.8%.
+- **The length check removes almost all harm** (3 harmed clusters at τ = 1 vs 119) and
+  reaches 91.6%, close to the oracle; in `hp50` it holds 84–85% at every τ where the default
+  falls to 58%.
+- Per condition the best τ differs widely (e.g. `e12_c10` wants τ = 1, `hp50` wants τ = 0):
+  a global τ is a compromise, which is why per-condition τ is reported only as an oracle.

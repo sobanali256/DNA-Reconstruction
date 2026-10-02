@@ -8,7 +8,9 @@ of the configured split, and writes
   <prefix>_cascade.csv    2x2 table (exact match), rescuable share, failure AUROC
                           (long format: section, metric, value, note);
   <prefix>_tau_sweep.csv  the adaptive pipeline per selector and threshold.
-In the outputs "fallback" is the second run.
+In the outputs "fallback" is the second run. With `group_by: dataset_id` (synthetic grid)
+both tables are repeated per condition, after a pooled group "all", in a leading
+`dataset_id` column.
 """
 
 from __future__ import annotations
@@ -26,6 +28,7 @@ from dnarecon.metrics import cascade_outcome, failure_auroc
 from dnarecon.results import read_run
 
 ROOT = Path(__file__).resolve().parent.parent
+MIN_FAILURES_FOR_AUROC = 5  # fewer BBS failures in a group: no AUROC (the CI is meaningless)
 
 
 def load_cache(bbs_dir: Path, fallback_dir: Path, split: str) -> tuple[pd.DataFrame, list[str], str]:
@@ -44,7 +47,7 @@ def load_cache(bbs_dir: Path, fallback_dir: Path, split: str) -> tuple[pd.DataFr
     if fb_m["method"] == "bbs_only":  # BBS has no per-cluster runtime
         fb = fb.drop(columns=fb.filter(like="itr_").columns).rename(columns=lambda c: c.replace("bbs_", "itr_"))
         fb = fb.assign(itr_failed=fb.itr_status.ne("ok"), itr_runtime_ms=float("nan"))
-    df = bbs[["cluster_id", "split", "expected_length", *bbs.filter(like="bbs_")]].merge(
+    df = bbs[["cluster_id", "split", "dataset_id", "coverage", "expected_length", *bbs.filter(like="bbs_")]].merge(
         fb[["cluster_id", *fb.filter(like="itr_")]], on="cluster_id", validate="one_to_one")
     df = df[df.split == split]
     if df.empty:
@@ -81,13 +84,27 @@ def cascade_rows(df: pd.DataFrame, n_resamples: int, seed: int) -> list[dict]:
         row("auroc", "n_clusters", len(scored), "clusters with BBS output; empty clusters excluded"),
         row("auroc", "n_bbs_wrong", int(is_wrong.sum())),
     ]
-    if 0 < is_wrong.sum() < len(scored):
+    if is_wrong.sum() < MIN_FAILURES_FOR_AUROC:
+        rows.append(row("auroc", "confidence", None, f"fewer than {MIN_FAILURES_FOR_AUROC} BBS failures"))
+    elif is_wrong.sum() < len(scored):
         for name, column in (("confidence", "bbs_confidence"), ("path_weight", "bbs_path_weight")):
             auc, low, high = failure_auroc(is_wrong, -scored[column], n_resamples, seed)
             rows += [row("auroc", name, auc, "lower value = predicted failure"),
                      row("auroc", f"{name}_ci95_low", low, f"bootstrap BCa, {n_resamples} resamples"),
                      row("auroc", f"{name}_ci95_high", high)]
     return rows
+
+
+def groups(df: pd.DataFrame, group_by: str | None) -> list[tuple[str | None, pd.DataFrame]]:
+    """[(None, df)] without grouping, else the pooled group "all" followed by one group per value."""
+    if group_by is None:
+        return [(None, df)]
+    return [("all", df), *((str(name), g) for name, g in df.groupby(group_by, sort=True))]
+
+
+def with_group(name: str | None, group_by: str | None, rows: list[dict]) -> list[dict]:
+    """Prefix each row with its group (only when grouping, so ungrouped tables keep their shape)."""
+    return rows if group_by is None else [{group_by: name, **r} for r in rows]
 
 
 def row(section, metric, value, note="") -> dict:
@@ -101,11 +118,16 @@ def main() -> None:
     cfg = yaml.safe_load(parser.parse_args().config.read_text())
 
     df, run_ids, fallback_method = load_cache(ROOT / cfg["bbs_run"], ROOT / cfg["fallback_run"], cfg["split"])
-    summary = pd.DataFrame(cascade_rows(df, cfg["bootstrap"]["n_resamples"], cfg["bootstrap"]["seed"])
-                           + [row("runs", "bbs_run", run_ids[0]), row("runs", "fallback_run", run_ids[1], fallback_method),
-                              row("runs", "split", cfg["split"])])
-    sweep = pd.DataFrame([cascade_outcome(df, tau, length_check)
-                          for length_check in (False, True) for tau in cfg["taus"]])
+    group_by = cfg.get("group_by")
+    runs = [row("runs", "bbs_run", run_ids[0]), row("runs", "fallback_run", run_ids[1], fallback_method),
+            row("runs", "split", cfg["split"])]
+    summary = pd.DataFrame(
+        [r for name, g in groups(df, group_by) for r in with_group(
+            name, group_by, cascade_rows(g, cfg["bootstrap"]["n_resamples"], cfg["bootstrap"]["seed"]))]
+        + with_group("all", group_by, runs))
+    sweep = pd.DataFrame([r for name, g in groups(df, group_by) for r in with_group(
+        name, group_by, [cascade_outcome(g, tau, length_check)
+                         for length_check in (False, True) for tau in cfg["taus"]])])
     sweep = sweep.rename(columns={"itr_seconds": "fallback_seconds"})
     if fallback_method == "bbs_only":
         sweep["fallback_seconds"] = float("nan")  # BBS has no per-cluster runtime

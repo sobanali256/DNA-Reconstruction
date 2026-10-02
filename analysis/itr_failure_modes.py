@@ -11,7 +11,8 @@ and ITR wrong, rescued, both_wrong), then:
     of reads that shorten, keep or lengthen that run, compared with the first such run in
     the both_right clusters.
 Ground truth is used for evaluation only. Writes <prefix>_itr_failure_modes.csv (long
-format: section, metric, value, note).
+format: section, metric, value, note); with `group_by: dataset_id` the rows are repeated per
+condition after a pooled group "all", in a leading `dataset_id` column.
 """
 
 from __future__ import annotations
@@ -27,8 +28,8 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from cascade_from_cache import ROOT, load_cache, row
-from dnarecon.dataset import load_microsoft
+from cascade_from_cache import ROOT, groups, load_cache, row, with_group
+from dnarecon.dataset import load_dataset
 
 LONG_RUN = 4  # homopolymer length counted as "long"
 GROUPS = {(True, True): "both_right", (True, False): "harmed",
@@ -133,8 +134,7 @@ def main() -> None:
 
     dataset = yaml.safe_load((ROOT / cfg["dataset"]).read_text())
     ids = set(df.cluster_id)
-    clusters = {c.cluster_id: c for c in load_microsoft(ROOT / dataset["clusters_path"], ROOT / dataset["centers_path"],
-                                                        dataset["expected_length"]) if c.cluster_id in ids}
+    clusters = {c.cluster_id: c for c in load_dataset(dataset, ROOT) if c.cluster_id in ids}
     df = df[df.bbs_status == "ok"].assign(  # clusters with reads
         truth=lambda x: x.cluster_id.map(lambda c: clusters[c].original_sequence),
         reads=lambda x: x.cluster_id.map(lambda c: clusters[c].reads),
@@ -142,8 +142,11 @@ def main() -> None:
         group=lambda x: [GROUPS[bool(b), bool(i)] for b, i in zip(x.bbs_exact_match, x.itr_exact_match)],
     )
 
-    out = pd.DataFrame(group_rows(df) + read_rows(df) + [row("runs", "bbs_run", run_ids[0]),
-                                                          row("runs", "itr_run", run_ids[1])])
+    group_by = cfg.get("group_by")
+    runs = [row("runs", "bbs_run", run_ids[0]), row("runs", "itr_run", run_ids[1])]
+    out = pd.DataFrame([r for name, g in groups(df, group_by)
+                        for r in with_group(name, group_by, group_rows(g) + read_rows(g))]
+                       + with_group("all", group_by, runs))
     path = (ROOT / cfg["output_prefix"]).with_name(Path(cfg["output_prefix"]).name + "_itr_failure_modes.csv")
     path.parent.mkdir(parents=True, exist_ok=True)
     out.to_csv(path, index=False, lineterminator="\n")
