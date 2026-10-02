@@ -196,8 +196,16 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
   exactly; gates G3.1–5, G5.1–7 pass (tests); smoke campaign complete.
   **Methodology frozen** 2 Oct 2026: tag `methodology-freeze` on `ae7aa1d` (pushed). Any
   change to τ, router, selectors, schedulers or the campaign after this is a method change.
-  **Next (Week 3):** final test runs (`configs/final/adaptive_*`), full scaling campaign
-  (`configs/final/scaling.yaml`, overnight, timing protocol), figures.
+- 2 Oct 2026 (night), Week 3 item 1 done: final test runs on `307c39b` (clean, pinned
+  engines), all complete and integrity-checked (one row per test cluster, only the 9 empty
+  Microsoft test clusters failed, no BBS shard failures/timeouts/crashes, routing = cache rule,
+  BBS confidence identical to the test cache): `final_microsoft_test_adaptive-20261002-232255-r1`
+  (τ 0, 0 routed), `final_synthetic_test_adaptive-20261002-232315-r1` (τ 0.8, 2,813 routed),
+  `final_synthetic_test_adaptive_lengthcheck-20261002-232904-r1` (τ 0.99, 5,472 routed).
+  These live runs are the headline test results; cache-derived numbers must match them.
+  Not timing results. Log `results/final_test.log`.
+  **Next (Week 3):** test-set analysis, full scaling campaign (`configs/final/scaling.yaml`,
+  overnight, idle laptop, timing protocol), figures.
 - Sanity targets **verified** in the BBS paper (iScience 2025, Table 2, "Srinivasavaradhan
   et al." = Microsoft CNR, all 10,000 clusters, default parameters, beam 20): success rate
   (exact match) BBS 94.77%, ITR 87.58%, CPL 94.93%; ITR took 7,352 s (~0.74 s/cluster, i9-13900H).
