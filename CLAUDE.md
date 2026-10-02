@@ -57,6 +57,7 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
 | Cache-run ITR times | Not timing results (the laptop slowed ~2× mid-run on 1 Oct). Reported timings come only from the controlled scaling runs; cache times are used only as approximate cost. |
 | BBS nondeterminism | BBS breaks score ties by random HashMap order (~0.5% of clusters, all confidence ≤ 0.5, confidence itself stable). Cache **one** run as canonical; measure and report run-to-run variability from ~5 repeats. No patch to BBS. |
 | τ rule (2 Oct) | Per family, cheapest τ in the grid within 0.25 pt of the best pooled dev exact rate (cost = share routed). One global τ for the 13 synthetic conditions, Microsoft separately; per-condition τ only as labeled oracle. **Frozen: synthetic 0.8, Microsoft 0** (BBS only); default selector primary, length check secondary (synthetic 0.99). |
+| BBS shard failure in adaptive runs | No BBS output → not routed (kept from Day 2): the cluster fails; a BBS crash marks the stage and run failed. Code review (2 Oct) flagged it; kept unless the user decides otherwise. |
 | Static scheduler (2 Oct) | Seeded shuffle of micro-batches, equal contiguous blocks per worker (OpenMP static). `static_lpt` (longest first by min(coverage,25)²) is a labeled extra. |
 | Scaling workload (2 Oct) | Full synthetic **test** split (9,100) at τ 0.8 (~2,900 to ITR, ~10 min serial); the 80/condition sample left only ~70 s. One cap for both stages: BBS `-t` = ITR workers. |
 
@@ -180,7 +181,9 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
   τ 0.6–0.7 (within noise); harm = homopolymer under-calling (92% wrong length), both-wrong
   median 7 reads. Pilot findings hold. Synthetic dev per condition: ITR ≥ BBS everywhere
   except `e03_c05` (95.3 vs 97.3) and `e06_c10_hp50` (58 vs 84: homopolymer bias confirmed).
-- 2 Oct 2026, Week 2 items 1–5 done (`6eff2d0`, `aa4b174`, `04f84ce`, `c7328e8`, `243b9dd`;
+- 2 Oct 2026, Week 2 items 1–5 done (`6eff2d0`, `aa4b174`, `04f84ce`, `c7328e8`, `243b9dd`,
+  code review fixes `bd09263`: summary uses one `run_scaling` invocation and stops on
+  incomplete cells or mixed code/data, cells validated up front, Ctrl-C cancels ITR relaunch;
   plan `docs/PLAN.md` "Methodology", results `docs/pilot_notes.md` Days 8–9).
   Synthetic dev per condition: ITR rescues 66% of BBS failures (13% on Microsoft); `hp50`
   reproduces the Microsoft harm; cascade 89.0% at τ 0.9 vs BBS 75.8% / ITR 88.6%; length

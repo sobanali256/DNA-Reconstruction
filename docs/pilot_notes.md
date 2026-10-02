@@ -412,5 +412,7 @@ huge one times out; all others complete). G5.7 from Day 2.
 
 **Smoke campaign** (`configs/scaling_smoke.yaml`: 130 dev clusters, 47 routed; 1 warm-up
 + 9 cells × 3 repetitions, all complete, no timeouts, peak concurrency = workers in every
-run). Machinery check only: with 47 clusters (10 micro-batches) the work is too small for
-meaningful speedups (best 1.68× at 4 workers). Table: `results/summary/scaling_smoke_cells.csv`.
+run). Machinery check only: with 47 clusters (10 micro-batches) the slowest single
+micro-batch bounds the makespan, so speedups plateau near 1.7× from 2 workers on. Table:
+`results/summary/scaling_smoke_cells.csv` (invocation `20261002-203943`, rerun after the
+code review fixes `bd09263`; the first smoke invocation is kept but not used).
