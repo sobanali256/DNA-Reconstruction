@@ -474,7 +474,9 @@ exact-match outcome.
 | Microsoft (7,000; 9 empty) | 95.53 [95.0, 96.0] | 87.27 [86.5, 88.0] | 95.53 (τ 0 = BBS only) | — | 96.00 / 87.83 / 96.00 / — |
 | Synthetic pooled (9,100) | 76.30 | 88.68 [88.0, 89.3] | **88.85** [88.2, 89.5], 30.9% routed | **91.25** [90.7, 91.8], 60.1% routed | 75.85 / 88.74 / 88.77 / 91.38 |
 
-- Test reproduces dev within about half a point everywhere: τ was not over-fitted to dev.
+- Pooled test numbers reproduce dev within half a point: τ was not over-fitted to dev. Per
+  condition (300 dev clusters) the gaps are larger, e.g. e06_c05 primary 88.0 dev vs 83.6
+  test, length check 93.3 vs 90.3; e06_c10_hp50 primary 74.3 vs 78.4.
   Microsoft BBS 95.53% vs the BBS paper's 94.77% on all 10,000 (ITR 87.27 vs 87.58).
 - Synthetic primary vs BBS only: rescued 1,268, harmed 126 (p ≈ 1e-237). It matches ITR only
   (88.68) while routing 31% of clusters. Length check: rescued 1,381, harmed 20.
