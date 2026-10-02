@@ -416,3 +416,40 @@ run). Machinery check only: with 47 clusters (10 micro-batches) the slowest sing
 micro-batch bounds the makespan, so speedups plateau near 1.7× from 2 workers on. Table:
 `results/summary/scaling_smoke_cells.csv` (invocation `20261002-210900`, code `7c6853e`
 after both code reviews; earlier smoke invocations are kept but not used).
+
+## Day 10 (2 Oct 2026): test analysis plan and expectations, written before opening test
+
+Written and committed before any test-split accuracy was computed. The final runs exist
+(`final_microsoft_test_adaptive-20261002-232255-r1`, `final_synthetic_test_adaptive-
+20261002-232315-r1`, `final_synthetic_test_adaptive_lengthcheck-20261002-232904-r1`, code
+`307c39b`) and passed an integrity check that read no accuracy column.
+
+**Analysis plan (fixed now).**
+- Headline adaptive numbers = the live final runs. Baselines (BBS only, ITR only), 2×2,
+  rescuable share, AUROC and τ sweep = the test caches (`microsoft_test_{bbs,itr}`,
+  `synthetic_test_{bbs,itr}`). A per-cluster check confirms the live runs equal the cache
+  prediction at the frozen τ and selector; any difference is reported, and the live run stays
+  the headline.
+- Exact rate with a 95% Wilson CI; empty clusters stay in the denominator as failures.
+- Adaptive vs BBS only: exact McNemar test (two-sided binomial on the discordant clusters,
+  rescued vs harmed), per family and per synthetic condition; per-condition p-values are not
+  corrected for multiple comparisons and are labeled so.
+- Mean normalized edit distance (no output = full-length error), plus the mean over clusters
+  with output only.
+- The test τ sweep is reported as post hoc, never used to choose τ (τ stays frozen).
+- Dev and test are shown side by side.
+
+**Expectations (from dev).**
+
+| Family | BBS only | ITR only | Adaptive primary | Adaptive length check |
+|---|---|---|---|---|
+| Microsoft (τ 0) | 96.0% | 87.8% | = BBS only (routes nothing) | = BBS only |
+| Synthetic pooled | 75.8% | 88.7% | 88.8% (τ 0.8, 31% routed) | 91.4% (τ 0.99, 61% routed) |
+
+- Synthetic: ITR rescues about two thirds of BBS failures; confidence AUROC ≈ 0.94.
+  Adaptive ≫ BBS only at low coverage / high error (e09_c05, e12_c05, e12_c10, e06_c05);
+  equal at coverage 20 and at 3% error.
+- `e06_c10_hp50`: the primary cascade is worse than BBS only (dev 74.3 vs 84.0, harmed 32,
+  rescued 3); the length check removes most of the harm (dev 85.3).
+- Microsoft: confidence AUROC ≈ 0.96; ITR rescues ≈ 13% of BBS failures and harms more;
+  harm = homopolymer under-calling (ITR outputs of the wrong length).
