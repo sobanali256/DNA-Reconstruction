@@ -218,9 +218,11 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
   limit applied to every cluster; fixture clusters reach ~5 s with all cores busy (reproduced
   2/3), so good clusters were marked timeout. Limit now 30 s ("too-slow" takes ~230 s); 5/5
   pass under full load, 217/217 idle. Real runs (60 s, max ~8.5 s, zero timeouts) unaffected.
-  **Next (Week 3), in order:** (1) ask the user to push (local commits since `307c39b` are
-  not pushed); (2) full scaling campaign (`configs/final/scaling.yaml`, overnight, idle
-  laptop, timing protocol); (3) figures; (4) writing brief update.
+  Reviewed (no findings) and pushed (`307c39b..eee2189`).
+  **Next (Week 3), in order:** (1) the user runs the full scaling campaign overnight
+  (`configs/final/scaling.yaml`, idle laptop, timing protocol); (2) integrity check of every
+  scaling run + `analysis/scaling_summary.py`; (3) figures (`scripts/make_figures.py`, not
+  built); (4) writing brief update. After (2)–(3) experimentation is complete.
 - Sanity targets **verified** in the BBS paper (iScience 2025, Table 2, "Srinivasavaradhan
   et al." = Microsoft CNR, all 10,000 clusters, default parameters, beam 20): success rate
   (exact match) BBS 94.77%, ITR 87.58%, CPL 94.93%; ITR took 7,352 s (~0.74 s/cluster, i9-13900H).
