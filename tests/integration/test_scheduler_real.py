@@ -75,9 +75,11 @@ def test_g5_5_bad_clusters_are_contained(tmp_path, clusters):
     huge = "".join(rnd.choice("ACGT") for _ in range(3000))
     bad = [ClusterRecord("bad-chars", ("ACGTXZ" * 18,) * 2, 110, "microsoft_cnr", original_sequence="A" * 110),
            ClusterRecord("too-slow", (huge,) * 10, 110, "microsoft_cnr", original_sequence="A" * 110)]
-    itr_yaml = tmp_path / "itr_fast_timeout.yaml"
+    # The limit applies to every cluster. "too-slow" takes ~230 s; the fixture clusters take
+    # < 4 s idle but ~5 s with all cores busy, so 5 s failed under load. 30 s separates both.
+    itr_yaml = tmp_path / "itr_short_timeout.yaml"
     itr_yaml.write_text(yaml.safe_dump({**yaml.safe_load((ROOT / "configs/itr.yaml").read_text()),
-                                        "timeout_s_per_cluster": 5}))
+                                        "timeout_s_per_cluster": 30}))
     data = [*clusters[:4], *bad, *clusters[4:]]
     rows, m = run(tmp_path, data, "inject", method="itr_only", itr_yaml=str(itr_yaml),
                   scheduler="dynamic", workers=4, microbatch_size=1)
