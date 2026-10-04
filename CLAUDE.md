@@ -214,12 +214,13 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
   Code review fixes: live rows paired with the live run's own BBS, `mcnemar_log10_p`,
   input/live-vs-cache guards, `metrics.cascade_frame` (all summaries byte-identical).
   **Test split is open; everything in the methodology stays frozen.**
-  **Next (Week 3), in order:** (1) investigate the one-off failure of
-  `tests/integration/test_scheduler_real.py::test_g5_5_bad_clusters_are_contained` in a full
-  run on 3 Oct (passed alone; message not captured; cause unverified, suspected 5 s timeout
-  under load) before the scaling campaign; (2) ask the user to push (local commits since
-  `307c39b` are not pushed); (3) full scaling campaign (`configs/final/scaling.yaml`,
-  overnight, idle laptop, timing protocol); (4) figures; (5) writing brief update.
+- 4 Oct 2026: G5.5 test failure explained and fixed (`98f617d`, test only). Its 5 s ITR
+  limit applied to every cluster; fixture clusters reach ~5 s with all cores busy (reproduced
+  2/3), so good clusters were marked timeout. Limit now 30 s ("too-slow" takes ~230 s); 5/5
+  pass under full load, 217/217 idle. Real runs (60 s, max ~8.5 s, zero timeouts) unaffected.
+  **Next (Week 3), in order:** (1) ask the user to push (local commits since `307c39b` are
+  not pushed); (2) full scaling campaign (`configs/final/scaling.yaml`, overnight, idle
+  laptop, timing protocol); (3) figures; (4) writing brief update.
 - Sanity targets **verified** in the BBS paper (iScience 2025, Table 2, "Srinivasavaradhan
   et al." = Microsoft CNR, all 10,000 clusters, default parameters, beam 20): success rate
   (exact match) BBS 94.77%, ITR 87.58%, CPL 94.93%; ITR took 7,352 s (~0.74 s/cluster, i9-13900H).
