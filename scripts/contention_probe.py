@@ -105,6 +105,8 @@ def main() -> None:
     if args.worker:
         work(args.worker)
         return
+    if 1 not in args.copies:
+        parser.error("--copies must include 1 (the baseline every slowdown is measured against)")
     stamp = time.strftime("%Y%m%d-%H%M%S")
     out_dir = ROOT / "results/diagnostics"
     out_dir.mkdir(parents=True, exist_ok=True)
