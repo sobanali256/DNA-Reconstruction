@@ -1,0 +1,18 @@
+# ADDED AFTER THE METHODOLOGY FREEZE (5 Oct 2026): a timing baseline only, not a method change.
+# Full ITR (every cluster) on the synthetic TEST split, the same 9,100 clusters as the scaling
+# campaign, so RQ0 (adaptive vs full ITR runtime) is measured under the timing protocol.
+# Same ITR settings and micro-batch size as configs/final/adaptive_synthetic.yaml. Base of
+# configs/final/scaling_itr_only.yaml; outputs must equal the cache synthetic_test_itr-20261002-161609-r1.
+experiment_name: final_synthetic_test_itr_only
+dataset: configs/dataset_synthetic.yaml
+clusters: data/splits/synthetic_grid_split.csv
+split: test
+method: itr_only
+itr:
+  config: configs/itr.yaml
+  scheduler: dynamic
+  workers: 4          # physical cores
+  microbatch_size: 5
+  partition_seed: 20261002   # used by the static schedulers only
+repetitions: 1
+output_root: results/

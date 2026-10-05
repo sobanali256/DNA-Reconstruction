@@ -2,8 +2,9 @@
 
     .venv/bin/python scripts/run_scaling.py configs/scaling_smoke.yaml
 
-Each cell is the campaign's base adaptive config with itr.scheduler, itr.workers and
-bbs.threads (= workers: one native-concurrency cap for both stages) replaced. `overrides`
+Each cell is the campaign's base config (adaptive, or itr_only for the full-ITR timing
+baseline) with itr.scheduler, itr.workers and, for adaptive, bbs.threads (= workers: one
+native-concurrency cap for both stages) replaced. `overrides`
 replace whole top-level keys of the base. Every cell config is validated before the first
 run. Every run is an ordinary run folder (scripts/run_experiment.py) named
 <campaign>_<cell>_rep<k>-<stamp>-r1, whose manifest config carries a `campaign` block (name,
@@ -45,7 +46,8 @@ def cell_config(base: dict, campaign: str, scheduler: str, workers: int, **campa
     rep = campaign_info.get("repetition", 0)
     cfg["experiment_name"] = f"{campaign}_{scheduler}_p{workers}_" + (f"rep{rep}" if rep else "warmup")
     cfg["itr"].update(scheduler=scheduler, workers=workers)
-    cfg["bbs"]["threads"] = workers
+    if "bbs" in cfg:  # itr_only bases have no BBS stage
+        cfg["bbs"]["threads"] = workers
     cfg.update(repetitions=1, warmup=0,
                campaign={"name": campaign, "cell": f"{scheduler}_p{workers}", **campaign_info})
     return validate_config(cfg, f"cell {scheduler}_p{workers}")
@@ -58,8 +60,8 @@ def main() -> None:
     args = parser.parse_args()
     camp = yaml.safe_load(args.config.read_text())
     base = validate_config(campaign_base(camp), f"{camp['base']} + overrides")
-    if base["method"] != "adaptive":
-        sys.exit("the campaign base must be an adaptive config")
+    if base["method"] not in ("adaptive", "itr_only"):
+        sys.exit("the campaign base must be an adaptive or itr_only config")
     cells = expand_cells(camp["cells"])
     reps, name = int(camp["repetitions"]), camp["campaign"]
     invocation = time.strftime("%Y%m%d-%H%M%S")

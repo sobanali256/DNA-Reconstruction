@@ -33,6 +33,12 @@ def test_cell_config_sets_one_concurrency_cap_and_leaves_base_alone():
     assert BASE["itr"]["workers"] == 4 and BASE["bbs"]["threads"] == 4  # deep copy
 
 
+def test_itr_only_base_gets_a_cell_without_bbs():
+    base = {k: v for k, v in BASE.items() if k not in ("bbs", "tau")} | {"method": "itr_only"}
+    cfg = cell_config(base, "camp", "dynamic", 2, repetition=1)
+    assert (cfg["itr"]["scheduler"], cfg["itr"]["workers"]) == ("dynamic", 2) and "bbs" not in cfg
+
+
 def run(cell, scheduler, p, makespan, itr):
     return {"cell": cell, "scheduler": scheduler, "workers": p, "hyperthreaded": p > 4,
             "makespan_s": makespan, "itr_s": itr, "bbs_s": 1.0, "utilization": 0.9,

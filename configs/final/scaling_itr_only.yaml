@@ -1,0 +1,15 @@
+# ADDED AFTER THE METHODOLOGY FREEZE (5 Oct 2026): full-ITR timing baseline for RQ0, compared
+# with the adaptive cells of configs/final/scaling.yaml (serial_p1, dynamic_p4) on the same
+# 9,100 synthetic test clusters. Expected: ~45-60 min per serial run, ~25-30 min per 4-worker
+# run, ~4-5 h in all. Timing protocol: plugged in, Windows "Best performance", idle.
+#   .venv/bin/python scripts/run_scaling.py configs/final/scaling_itr_only.yaml 2>&1 | tee -a results/scaling_itr_only.log
+#   .venv/bin/python analysis/scaling_summary.py configs/final/scaling_itr_only.yaml
+campaign: scaling_itr_only_synthetic_test
+base: configs/final/itr_only_synthetic.yaml
+overrides: {}
+cells:
+  - {scheduler: dynamic, workers: [4]}   # first cell = the warm-up cell (the shorter one)
+  - {scheduler: serial, workers: [1]}
+warmup: 1
+repetitions: 3
+output_prefix: results/summary/scaling_itr_only_synthetic_test

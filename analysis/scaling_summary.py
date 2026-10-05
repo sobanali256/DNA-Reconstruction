@@ -9,7 +9,8 @@ changes the workload; G8.6). Everything else is listed as not used, with the rea
 repetitions (G8.1; --allow-incomplete only to inspect a partial campaign) and every run
 used the same code, dataset files, cluster list, clusters and routed set (G8.3).
 Per run (from timing.csv and the manifest):
-  * makespan       = the run row: wall time of the whole adaptive run (BBS + route + ITR);
+  * makespan       = the run row: wall time of the whole run (adaptive: BBS + route + ITR;
+                     itr_only: ITR on every non-empty cluster, "routed" = all of them);
   * bbs / itr      = the stage rows' wall times;
   * utilization    = sum of worker busy times / (workers x ITR stage wall time);
   * imbalance      = max / mean busy time over the cell's workers (idle workers count as 0);
@@ -93,12 +94,16 @@ def run_row(m: dict) -> dict:
     p = sched["workers"]
     busy = [sched["busy_ms"].get(str(w), 0.0) for w in range(p)]
     per_cluster = pd.read_csv(m["_dir"] / "per_cluster.csv", usecols=["routed_to_itr", "itr_status", "status"])
+    if m["method"] == "itr_only":  # every non-empty cluster goes to ITR; no routing step
+        n_routed, routed_sha = m["n_clusters"] - m["n_empty_clusters"], "itr_only: all non-empty"
+    else:
+        n_routed, routed_sha = m["n_routed"], m["routed_ids_sha256"]
     itr_s = stage.get("itr", 0) / 1000
     return {
         "run_id": m["run_id"], "cell": m["config"]["campaign"]["cell"], "scheduler": sched["mode"],
         "workers": p, "hyperthreaded": sched.get("hyperthreaded", False),
         "repetition": m["config"]["campaign"]["repetition"], "position": m["config"]["campaign"]["position"],
-        "n_clusters": m["n_clusters"], "n_routed": m["n_routed"], "routed_ids_sha256": m["routed_ids_sha256"],
+        "n_clusters": m["n_clusters"], "n_routed": n_routed, "routed_ids_sha256": routed_sha,
         "project_commit": m["provenance"]["project_commit"], "clusters_file_sha256": m["clusters_file_sha256"],
         "dataset_files_sha256": json.dumps(m["dataset_files_sha256"], sort_keys=True),
         "n_tasks": sched["n_tasks"], "microbatch_size": sched["microbatch_size"],
