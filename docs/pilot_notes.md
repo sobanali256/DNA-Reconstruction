@@ -522,3 +522,99 @@ exact-match outcome.
   Microsoft **length check**: τ 0.7–0.9 gives 95.73–95.76 vs 95.53 BBS only (+0.2 points,
   rescued 30–45 vs harmed 16–29); on dev the same policy was within noise (+4 clusters), so
   the frozen rule chose BBS only. Report as a post hoc observation, not as a result.
+
+## Day 11 (5 Oct 2026): scaling campaign results and the speedup explanation
+
+### Scaling campaign (`configs/final/scaling.yaml`, synthetic test split, τ 0.8)
+
+Invocation `20261005-043213` (overnight 4–5 Oct), commit `5955a31` (clean, pinned engines;
+the only method-code change since the freeze tag is analysis-only `metrics.py`). Summary:
+`analysis/scaling_summary.py configs/final/scaling.yaml` →
+`results/summary/scaling_synthetic_test_{runs,cells}.csv`.
+
+**Integrity (all 27 measured runs + 1 warm-up):** status complete; 9,100 rows, one per
+cluster; 0 failed clusters; 0 BBS shard failures; the same 2,813 routed clusters as the final
+test run (`routed_ids_sha256` equal); all 2,813 ITR results ok (no timeout/crash); peak
+concurrency = workers and BBS `-t` = workers in every run; final sequence and final algorithm
+identical to `final_synthetic_test_adaptive-20261002-232315-r1` on every cluster in every
+run (the scheduler changes timing only). No errors or slowdown in `results/scaling.log`; the
+only outlier is serial rep 1 (354 s vs 332–338 s).
+
+Median of 3 repetitions (makespan = whole run: BBS + route + ITR):
+
+| Cell | Makespan (s) | Speedup | Efficiency | ITR stage (s) | BBS stage (s) | Utilization | Imbalance |
+|---|---|---|---|---|---|---|---|
+| serial p1 | 337.5 | 1.00 | 1.00 | 307.4 | 29.6 | 1.000 | 1.000 |
+| dynamic p1 | 335.5 | 1.01 | 1.01 | 305.4 | 29.8 | 1.000 | 1.000 |
+| dynamic p2 | 205.2 | 1.65 | 0.82 | 186.8 | 18.3 | 1.000 | 1.000 |
+| static p2 | 207.4 | 1.63 | 0.81 | 189.3 | 18.3 | 0.988 | 1.012 |
+| dynamic p4 | 162.4 | 2.08 | 0.52 | 149.2 | 13.2 | 0.997 | 1.003 |
+| static p4 | 170.3 | 1.98 | 0.50 | 156.4 | 13.7 | 0.943 | 1.061 |
+| static_lpt p4 | 167.7 | 2.01 | 0.50 | 153.8 | 13.5 | 0.988 | 1.012 |
+| dynamic p8 (HT) | 243.4 | 1.39 | 0.17 | 231.6 | 11.9 | 0.997 | 1.003 |
+| static p8 (HT) | 237.3 | 1.42 | 0.18 | 225.6 | 11.7 | 0.961 | 1.041 |
+
+- **RQ3:** 2.08× at 4 physical cores (throughput ≈ 27 → 56 clusters/s). 8 hyper-threaded
+  workers are slower than 4 (still faster than serial): a negative result to report.
+- **RQ4 / H5 holds:** dynamic removes static's imbalance (1.061 → 1.003) and is ~5% faster
+  at 4 workers; static_lpt is in between. At 2 and 8 workers the difference is within the
+  spread of repetitions (p8: dynamic 238.8–255.7 s, static 235.1–246.2 s).
+- **Scheduler overhead is negligible** (dynamic p1 = serial).
+- **Not the cause of the sub-linear speedup:** idle workers (utilization ≥ 0.997 with
+  dynamic), serial parts (BBS and ITR both scale ~2×; route + overhead < 1 s), scheduling.
+- **The cause: each ITR task runs slower when others run beside it.** Sum of worker busy time
+  vs serial ITR time (305 s): ×1.2 at p2, ×2.0 at p4, ×6 at p8, for the same 2,813 clusters.
+  Slowest cluster: ~0.9 s alone, ~2.2 s at p4, ~5.5 s at p8. 4 workers × 1/2.0 ≈ 2×.
+- **Routed clusters are ITR's cheapest** (mostly coverage 5; ITR cost grows with reads²): in
+  the ITR cache the 2,813 routed clusters are ~11% of full-ITR compute time while being 31%
+  of clusters (209 vs 783 ms/cluster, mixed-speed cache times: approximate cost only). The
+  controlled full-ITR timing for RQ0 is `configs/final/scaling_itr_only.yaml` (added after
+  the freeze, timing only; pending).
+
+### Contention probe: why ITR tasks slow down (diagnostic, not a timing result)
+
+`scripts/contention_probe.py` (commit `d7130b4`, clean, idle laptop, 5 Oct 14:49), raw data
+`results/summary/contention_probe.csv`. N identical processes start at once (N = 1, 2, 4, 8;
+3 repetitions, N order rotated); each records its own time. Kernels: **compute** = pure
+integer loop, tiny memory footprint (slowed only by clock speed or by sharing a core);
+**memory** = repeated sums over a 256 MB array (bandwidth-bound); **itr** = `itr_cli` on 3
+coverage-20 synthetic test clusters.
+
+| Copies | compute slowdown | memory slowdown | ITR slowdown | ITR throughput | Campaign ITR speedup |
+|---|---|---|---|---|---|
+| 1 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 |
+| 2 | 1.15 | 1.89 | 1.15 | 1.74 | 1.65 |
+| 4 | 1.70 | 3.48 | 2.02 | 1.98 | 2.06 |
+| 8 | 3.55 | 7.12 | 6.21 | 1.29 | 1.33 |
+
+(slowdown = median per-process time / median at 1 copy; throughput = copies / slowdown.
+Medians at 1 copy: compute 3.29 s, memory 2.84 s, ITR 2.39 s.)
+
+- **Clock speed (power limit), the larger part.** The compute kernel has no memory traffic
+  but still slows 1.70× with 4 copies on 4 separate physical cores: consistent with the 15 W
+  i5-10210U lowering all cores' clock under all-core load (single-core turbo 4.2 GHz). WSL
+  does not report real clock frequencies, so this is an inference, not a measured frequency.
+  Alone it caps 4 cores at ~2.35× throughput.
+- **Memory bandwidth is saturated by one process:** memory-kernel throughput stays ~1.1×.
+- **ITR = clock effect + shared cache/memory contention.** At 4 copies ITR slows 2.02× vs
+  1.70× for compute: ~1.7× from clock, ~1.19× (2.02 / 1.70) from the shared 6 MB L3 and
+  memory (ITR's dynamic-programming tables do not fit in private caches). Probe ITR
+  throughput 1.98× matches the campaign's ITR speedup 2.06×.
+- **Why 8 workers are worse than 4:** hyper-threading gives the compute kernel no gain
+  (throughput 2.25× vs 2.35×), and ITR loses more (6.21× vs 3.55× slowdown) because two
+  threads on a core also share its private L1/L2 caches and evict each other's data:
+  throughput 1.98× → 1.29×.
+- **Caveats:** diagnostic only (3 repetitions; single-copy compute time varies 3.0–3.8 s).
+  The probe's ITR job uses coverage-20 clusters while the campaign mostly routes coverage 5;
+  they still agree at 4 copies.
+
+**Paper wording (PDC):** Dynamic scheduling kept workers ≥ 99.7% busy, so the remaining
+efficiency loss is per-task slowdown, not idle time or scheduling overhead. A contention probe
+shows why: a compute-only kernel slows 1.70× with 4 concurrent copies (consistent with the
+15 W CPU lowering its clock under all-core load), a memory-streaming kernel gains no
+throughput beyond one copy, and ITR slows 2.02×, the clock effect plus ~19% from shared
+cache/memory contention. The probe's ITR throughput (1.98×) matches the measured ITR speedup
+(2.06×). Hyper-threading gives no compute gain and adds cache contention for ITR, so 8
+workers are slower than 4. On this laptop the speedup is bounded by the platform's power and
+memory system, not by the parallel design; a CPU with sustained all-core clocks should scale
+better (expectation, not a claim).
