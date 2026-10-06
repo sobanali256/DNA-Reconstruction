@@ -629,8 +629,8 @@ configs/final/scaling_itr_only.yaml` → `results/summary/scaling_itr_only_synth
 {runs,cells}.csv`.
 
 **Integrity (6 measured runs + 1 warm-up):** status complete; 9,100 rows, exactly the test
-IDs; every cluster ITR ok (no timeout/crash; slowest 1.4–2.2 s serial, 2.6–3.0 s at p4);
-1,820 tasks per run, each ok with one launch; peak concurrency = workers; ITR output
+IDs; every cluster ITR ok (no timeout/crash; slowest cluster 1.2–2.2 s serial, 2.6–3.0 s at
+p4); 1,820 tasks per run, each ok with one launch; peak concurrency = workers; ITR output
 identical to the ITR test cache `synthetic_test_itr-20261002-161609-r1` on every cluster in
 every run. Log clean. Repetitions are tight (serial 3,206–3,232 s; p4 1,577–1,592 s).
 
@@ -640,26 +640,100 @@ Median of 3 repetitions, compared with the adaptive campaign (Day 11, same clust
 |---|---|---|---|---|
 | Full ITR (9,100 to ITR) | 3,212.8 | 1,582.5 | 2.03× | 88.68% |
 | Adaptive τ 0.8 (2,813 to ITR) | 337.5 | 162.4 | 2.08× | 88.85% |
-| Full ITR / adaptive | **9.5×** | **9.7×** | | |
+| Full ITR / adaptive, as measured | 9.5× | 9.7× | | |
+| Full ITR / adaptive, day-drift corrected | **≈ 9.0×** | **≈ 9.1×** | | |
 
-- **RQ0 answered:** the cascade matches full ITR's accuracy (+0.17 pt, Day 10) at ~1/10 of
-  its time. Routing saves far more than parallelism here: 9.5× from routing vs ~2× from 4
-  cores; together, full ITR serial / adaptive p4 = **19.8×**.
+- **Day-to-day drift (corrected 6 Oct, audit):** the two campaigns ran on different days.
+  The same 2,813 routed clusters took a summed 306 s of ITR time (median; 302–323 s) in the
+  adaptive serial runs and 325 s (322–326 s) inside the full-ITR serial runs, ×1.06; at p4
+  593 s vs 634 s of busy time, ×1.07. The slowdown is uniform across conditions (×1.06–1.08
+  in each), so it is a day effect, not the position in the run. Dividing full ITR by these
+  factors gives ≈ 9.0× (serial) and ≈ 9.1× (p4). Report "about 9×".
+- **RQ0, time:** the cascade needs about 1/9 of full ITR's time. Routing saves far more than
+  parallelism here: ~9× from routing vs ~2× from 4 cores; together, full ITR serial /
+  adaptive p4 = 19.8× as measured (≈ 18.7× drift-corrected).
+- **RQ0, accuracy (corrected 6 Oct, audit; `analysis/supplement_tables.py`, see below):**
+  the pooled tie (88.85% vs 88.68%, McNemar p = 0.41) comes from the homopolymer-bias
+  condition, where ITR is poor (78.4% vs 62.0%). **On the 12 conditions without homopolymer
+  bias, full ITR is better: 90.90% vs 89.71% (−1.19 pt; 131 vs 31 discordant clusters,
+  p ≈ 8e-16).** The losses are in the hard conditions (e12_c10 −7.3 pt, e09_c05 −3.1,
+  e09_c10 −2.4): confident BBS failures that the cascade never routes. The length-check
+  cascade beats full ITR in both views: 91.25% vs 88.68% pooled, 91.62% vs 90.90% without
+  hp50 (+0.71 pt, 81 vs 21, p ≈ 2e-9).
 - **Why routing saves more than the 31% routed share suggests:** measured with controlled
-  times, the 2,813 routed clusters are **10.1%** of full-ITR compute (115 vs 460 ms/cluster;
-  the Day 11 cache estimate was ~11%). ITR cost grows with coverage (mean 49 / 204 / 849 ms
-  at coverage 5 / 10 / 20), and BBS is least confident on low-coverage clusters, which are
-  ITR's cheapest (routed: 1,862 coverage 5, 898 coverage 10, 53 coverage 20). This is a property of the grid, not a general guarantee: a workload whose
-  hard clusters are high-coverage would save less.
+  times, the 2,813 routed clusters are **10.1%** of full-ITR compute (115 ms/cluster routed
+  vs 460 ms/cluster not routed; 353 ms over all clusters; the Day 11 cache estimate was
+  ~11%). ITR cost grows with coverage (mean 49 / 204 / 849 ms at coverage 5 / 10 / 20), and
+  BBS is least confident on low-coverage clusters, which are ITR's cheapest (routed: 1,862
+  coverage 5, 898 coverage 10, 53 coverage 20). This is a property of the grid, not a general
+  guarantee: a workload whose hard clusters are high-coverage would save less.
 - **Full-ITR speedup at p4 is 2.03×**, the same per-task slowdown as Day 11 (independent
   check of the contention explanation on a different, coverage-balanced task mix).
 - **Length-check variant (τ 0.99, 5,472 routed) was not timed.** Estimate from these
   controlled per-cluster times (approximate, not a timing result): its routed clusters are
   ~33.5% of full-ITR compute (~1,075 s serial ITR + ~30 s BBS ≈ 1,100 s, ~3× faster than
-  full ITR) for 91.25% exact vs 88.68%.
+  full ITR).
 
 **Paper wording (both):** On the synthetic test split, routing only low-confidence clusters
-to ITR gave the same accuracy as running ITR on every cluster (88.85% vs 88.68% exact) in
-one tenth of the time (337 s vs 3,213 s serial; 162 s vs 1,583 s on 4 workers). The routed
-clusters are 31% of clusters but only 10% of ITR's compute, because BBS's low-confidence
-clusters are mostly low-coverage ones, which ITR handles fastest.
+to ITR took about one ninth of full ITR's time (337 s vs 3,213 s serial; 162 s vs 1,583 s on
+4 workers, measured on different days; ≈ 9× after correcting a 6–7% day-to-day drift). The
+primary cascade matched full ITR's exact rate on the pooled grid (88.85% vs 88.68%), but only
+because of the homopolymer-bias condition; on the 12 conditions with independent IDS errors
+it was 1.2 points below full ITR (89.7% vs 90.9%). The length-consistency variant was above
+full ITR in both views (91.6% vs 90.9% without homopolymer bias) at an estimated third of its
+compute. The routed clusters are 31% of clusters but only 10% of ITR's compute, because
+BBS's low-confidence clusters are mostly low-coverage ones, which ITR handles fastest.
+
+### Audit (6 Oct 2026): supplementary tables and limitations
+
+A full audit (code read, independent recomputation from raw data without `dnarecon`, then an
+independent second check) found no bug that changes any result: scoring, routing, selection,
+splits, τ on dev only, no ground truth in engine inputs, AUROC, 2×2 counts and every Day 10–12
+number reproduce. 218 tests pass; `check_itr_wrapper.py` passes. It led to the RQ0
+corrections above and to `analysis/supplement_tables.py configs/final/supplement.yaml`
+(analysis only, added after the freeze) → `results/summary/supplement_{vs_full_itr,
+itr_cost,bbs_repeats}.csv`:
+
+- **Cascade vs full ITR** per condition with exact McNemar p (the test table compared every
+  method with BBS only). Numbers in the RQ0 bullet above.
+- **Controlled ITR cost per condition** (serial full-ITR runs, median of 3): coverage 5
+  46–50 ms, coverage 10 195–210 ms (hp50 201), coverage 20 822–868 ms per cluster; cost rises
+  slightly with error rate; coverage-20 conditions are 74% of full-ITR time. BBS has no
+  per-condition cost (shard timing only, by design).
+- **BBS run-to-run variation on the full synthetic test split:** 30 clean runs (cache, 2 final,
+  27 scaling): BBS exact 6,938–6,945 of 9,100 (76.24–76.32%; cache 6,943 = median). Per run,
+  79–116 clusters (median 101, ~1.1%) have a different BBS sequence from the cache, all with
+  confidence ≤ 0.5, so all are routed at τ 0.8 and the primary policy's final outputs are
+  unaffected (length check, τ 0.99: 20 final sequences differ, no exact-match outcome; Day 10).
+  BBS confidence is identical in every run. (Pilot, Microsoft: 3/1,000; synthetic has more ties.)
+- **Confidence (RQ2):** lead with per-condition AUROC. The pooled synthetic AUROC (0.947) is
+  high partly because confidence separates easy conditions from hard ones; within the hard
+  conditions it is 0.60–0.80 (e12_c05 0.60, e09_c05 0.70, e12_c10 0.78, e06_c05 0.79). Not
+  computable where BBS never fails (4 test conditions, 5 dev).
+
+**Limitations to state in the paper:**
+- **Error composition (deviation from the proposal):** the proposal planned three error
+  compositions (balanced, substitution-dominant, deletion-dominant). Every synthetic
+  condition uses balanced errors (p_ins = p_del = p_sub); the unbalanced compositions were
+  not run (decided 6 Oct: limitation only). The only non-balanced error process tested is
+  the `hp50` homopolymer bias, plus the real Nanopore errors of the Microsoft data. Strands
+  are uniform i.i.d. ACGT, so GC skew was not tested either. This touches both papers:
+  bioinformatics RQ1/RQ6 ("accuracy and cost across ... error compositions") and the PDC
+  review's gap G5 ("whether one threshold holds across insertion, deletion and substitution
+  rates"): τ was validated across total error rate and coverage, not across error-type mix,
+  so G5 is only partly addressed. Expected impact (6 Oct analysis, independently checked): no
+  change to the PDC timing results (ITR cost is set by coverage); no new mechanism expected
+  for accuracy, since the hp50 vs e12_c10 contrast already shows that correlated, not
+  frequent, deletions hurt ITR; untested: strongly deletion-dominant channels (both engines
+  rely on the designed length) and insertion-dominant ones (not in the proposal either).
+- **CPU placement:** workers are not pinned to cores (no affinity is set; WSL2 under
+  Hyper-V). "1/2/4 workers = physical cores" means at most 4 concurrent processes on a
+  4-core CPU, not that each ran on its own core. In the contention probe, part of the
+  compute-kernel slowdown at 4 copies could come from two copies sharing a hyper-threaded
+  core rather than from clock speed; the clock explanation is an inference.
+- **Scheduling (RQ5):** dynamic vs static was measured at one micro-batch size (5 clusters,
+  ~563 tasks; per-task cost CV 1.08, largest 7.8× the mean). With many small tasks the seeded
+  shuffle already balances static well, which bounds the gain (~5% at p4). Task granularity
+  was not varied, and static was not run on the full-ITR workload.
+- **RQ0 timing** compares campaigns from two days (drift corrected above, ~6–7%).
+- **Single machine** (15 W laptop CPU); speedups are platform-bound (Day 11).

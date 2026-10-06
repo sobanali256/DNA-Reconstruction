@@ -1,0 +1,12 @@
+# ADDED AFTER THE METHODOLOGY FREEZE (6 Oct 2026, audit): supplementary test tables, analysis
+# only (reads finished runs; no method change).
+#   .venv/bin/python analysis/supplement_tables.py configs/final/supplement.yaml
+itr_run: results/synthetic_test_itr-20261002-161609-r1      # full ITR = the ITR-only test cache
+bbs_run: results/synthetic_test_bbs-20261002-142420-r1      # canonical BBS run (reference)
+live:
+  adaptive: results/final_synthetic_test_adaptive-20261002-232315-r1
+  adaptive_lengthcheck: results/final_synthetic_test_adaptive_lengthcheck-20261002-232904-r1
+bias_conditions: [synthetic_e06_c10_hp50]                   # homopolymer-bias condition(s)
+itr_timing_campaign: configs/final/scaling_itr_only.yaml    # its serial_p1 runs: controlled ITR cost
+bbs_campaign: configs/final/scaling.yaml                     # measured runs: BBS repeats
+output_prefix: results/summary/supplement

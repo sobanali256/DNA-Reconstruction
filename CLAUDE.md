@@ -225,11 +225,21 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
   all-core load + memory contention), shown by `scripts/contention_probe.py`.
 - 6 Oct 2026: full-ITR timing baseline (`configs/final/scaling_itr_only.yaml`, added after
   the freeze, timing only) done, 6/6 runs clean, output = ITR cache. **RQ0:** full ITR
-  3,213 s serial / 1,583 s p4 vs adaptive 337 / 162 s (**9.5–9.7×**) at equal accuracy
-  (88.68 vs 88.85%); routed clusters = 10.1% of ITR compute (Day 12 notes).
+  3,213 s serial / 1,583 s p4 vs adaptive 337 / 162 s: 9.5× / 9.7× as measured, **≈ 9×**
+  after a 6–7% day-to-day drift (different days). Accuracy: pooled tie (88.85 vs 88.68%)
+  only thanks to hp50; **without hp50 full ITR is 1.2 pt better** (90.9 vs 89.7%, p ≈ 8e-16);
+  length check beats full ITR in both views (91.6 vs 90.9% without hp50). Routed clusters
+  = 10.1% of ITR compute (Day 12 notes).
+- 6 Oct 2026: full audit (own recomputation from raw data + independent agent check): **no bug
+  changes any result**. Added `analysis/supplement_tables.py configs/final/supplement.yaml`
+  (cascade vs full ITR McNemar per condition, controlled ITR cost per condition, BBS
+  run-to-run on 30 synthetic test runs: 76.24–76.32%, ~1.1% of clusters differ, all
+  confidence ≤ 0.5). Limitations recorded (Day 12 "Audit"): no unbalanced error compositions
+  (sub-/del-dominant; decided: limitation only, no runs; affects bioinformatics RQ1/RQ6 and
+  PDC gap G5, which is only partly addressed), no CPU pinning, one task granularity, two-day RQ0 timing;
+  lead RQ2 with per-condition AUROC (pooled 0.947 hides 0.60–0.80 in hard conditions).
   **Next:** (1) figures (`scripts/make_figures.py`, not built); (2) writing brief update.
-  Experimentation is complete apart from optional items (BBS run-to-run variation on full
-  data, skewed compositions).
+  Experimentation is complete.
 - Sanity targets **verified** in the BBS paper (iScience 2025, Table 2, "Srinivasavaradhan
   et al." = Microsoft CNR, all 10,000 clusters, default parameters, beam 20): success rate
   (exact match) BBS 94.77%, ITR 87.58%, CPL 94.93%; ITR took 7,352 s (~0.74 s/cluster, i9-13900H).
