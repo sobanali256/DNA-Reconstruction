@@ -242,6 +242,10 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
 - 6 Oct 2026: figures built: `scripts/make_figures.py configs/figures.yaml` → `figures/f1–f9`
   (PDF + PNG; reads only `results/summary/*.csv`; f9 uses `supplement_routed_cost.csv`, the
   length-check time estimate). All 9 drawn; which go in the paper is decided while writing.
+  Legends completed and plotted values audited against the CSVs (no differences); draft
+  captions `figures/CAPTIONS.md`. Code review: one fix (f9 length-check estimate rescaled to
+  the cascade day, ≈ 1,049 s). `scripts/export_figure_data.py configs/figures.yaml` →
+  `figures/data/` (per-figure CSVs + `FIGURE_DATA.md` for redrawing in a chat assistant).
   Writing brief updated (private). **Next:** paper writing; pick figures.
 - Sanity targets **verified** in the BBS paper (iScience 2025, Table 2, "Srinivasavaradhan
   et al." = Microsoft CNR, all 10,000 clusters, default parameters, beam 20): success rate
