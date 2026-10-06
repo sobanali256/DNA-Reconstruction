@@ -1,0 +1,22 @@
+# Paper figures (6 Oct 2026): every figure is drawn from the aggregated CSVs below only.
+#   .venv/bin/python scripts/make_figures.py configs/figures.yaml            # all figures
+#   .venv/bin/python scripts/make_figures.py configs/figures.yaml --only f5  # one figure
+inputs:
+  test_table: results/summary/final_test_table.csv
+  synthetic_test_cascade: results/summary/synthetic_test_cascade.csv
+  microsoft_test_cascade: results/summary/microsoft_test_cascade.csv
+  synthetic_dev_sweep: results/summary/synthetic_dev_tau_sweep.csv
+  microsoft_dev_sweep: results/summary/microsoft_dev_tau_sweep.csv
+  synthetic_test_sweep: results/summary/synthetic_test_tau_sweep.csv
+  microsoft_test_sweep: results/summary/microsoft_test_tau_sweep.csv
+  tau_selection: results/summary/tau_selection.csv
+  scaling_cells: results/summary/scaling_synthetic_test_cells.csv
+  scaling_runs: results/summary/scaling_synthetic_test_runs.csv
+  itr_only_cells: results/summary/scaling_itr_only_synthetic_test_cells.csv
+  contention: results/summary/contention_probe.csv
+  routed_cost: results/summary/supplement_routed_cost.csv
+frozen_tau: {synthetic: {default: 0.8, length_check: 0.99}, microsoft: {default: 0.0}}
+physical_cores: 4
+output_dir: figures
+formats: [pdf, png]
+dpi: 300

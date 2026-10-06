@@ -238,8 +238,11 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
   (sub-/del-dominant; decided: limitation only, no runs; affects bioinformatics RQ1/RQ6 and
   PDC gap G5, which is only partly addressed), no CPU pinning, one task granularity, two-day RQ0 timing;
   lead RQ2 with per-condition AUROC (pooled 0.947 hides 0.60–0.80 in hard conditions).
-  **Next:** (1) figures (`scripts/make_figures.py`, not built); (2) writing brief update.
   Experimentation is complete.
+- 6 Oct 2026: figures built: `scripts/make_figures.py configs/figures.yaml` → `figures/f1–f9`
+  (PDF + PNG; reads only `results/summary/*.csv`; f9 uses `supplement_routed_cost.csv`, the
+  length-check time estimate). All 9 drawn; which go in the paper is decided while writing.
+  Writing brief updated (private). **Next:** paper writing; pick figures.
 - Sanity targets **verified** in the BBS paper (iScience 2025, Table 2, "Srinivasavaradhan
   et al." = Microsoft CNR, all 10,000 clusters, default parameters, beam 20): success rate
   (exact match) BBS 94.77%, ITR 87.58%, CPL 94.93%; ITR took 7,352 s (~0.74 s/cluster, i9-13900H).

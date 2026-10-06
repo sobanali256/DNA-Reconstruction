@@ -11,6 +11,10 @@ Reads finished runs only (never reruns anything) and writes
                              full-ITR timing runs (median over repetitions of the condition
                              mean, plus min/max over repetitions and the per-cluster maximum;
                              share_of_itr_time = median mean x clusters / sum: ~one run's share);
+  <prefix>_routed_cost.csv  per live cascade: ITR compute of its routed clusters in the serial
+                             full-ITR runs (median over repetitions): an estimate of the
+                             cascade's serial ITR time from controlled per-cluster times (the
+                             length-check policy was never timed itself);
   <prefix>_bbs_repeats.csv   BBS run-to-run variation over every clean synthetic test run with
                              a BBS stage (cache, final live runs, measured scaling runs): exact
                              count per run, and per run the clusters whose BBS sequence differs
@@ -31,7 +35,7 @@ from final_results import mcnemar
 from scaling_summary import campaign_runs
 
 COLUMNS = ["cluster_id", "dataset_id", "split", "bbs_sequence", "bbs_confidence", "bbs_exact_match",
-           "itr_runtime_ms", "exact_match"]
+           "routed_to_itr", "itr_runtime_ms", "exact_match"]
 
 
 def read(run: str | Path) -> tuple[dict, pd.DataFrame]:
@@ -79,8 +83,28 @@ def vs_full_itr(cfg: dict) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def serial_itr_runs(cfg: dict) -> list[dict]:
+    return [m for m in campaign(cfg["itr_timing_campaign"]) if m["config"]["campaign"]["cell"] == "serial_p1"]
+
+
+def routed_cost(cfg: dict) -> pd.DataFrame:
+    times = [read(m["_dir"].relative_to(ROOT))[1].itr_runtime_ms.astype(float) / 1000 for m in serial_itr_runs(cfg)]
+    rows = []
+    for method, run in cfg["live"].items():
+        manifest, live = read(run)
+        routed = live.index[live.routed_to_itr.eq("True")]
+        routed_s = pd.Series([t[routed].sum() for t in times])
+        total_s = pd.Series([t.sum() for t in times])
+        rows.append({"method": method, "tau": manifest["tau"], "selector": manifest["selector"],
+                     "n_routed": len(routed), "n_clusters": len(live),
+                     "routed_itr_s_median": routed_s.median(), "routed_itr_s_min": routed_s.min(),
+                     "routed_itr_s_max": routed_s.max(), "full_itr_s_median": total_s.median(),
+                     "share_of_itr_time": (routed_s / total_s).median(), "n_timing_runs": len(times)})
+    return pd.DataFrame(rows)
+
+
 def itr_cost(cfg: dict) -> pd.DataFrame:
-    runs = [m for m in campaign(cfg["itr_timing_campaign"]) if m["config"]["campaign"]["cell"] == "serial_p1"]
+    runs = serial_itr_runs(cfg)
     per_run = []
     for m in runs:
         _, df = read(m["_dir"].relative_to(ROOT))
@@ -120,7 +144,7 @@ def main() -> None:
     cfg = yaml.safe_load(parser.parse_args().config.read_text())
     prefix = ROOT / cfg["output_prefix"]
     prefix.parent.mkdir(parents=True, exist_ok=True)
-    for name, table in (("vs_full_itr", vs_full_itr(cfg)), ("itr_cost", itr_cost(cfg)),
+    for name, table in (("vs_full_itr", vs_full_itr(cfg)), ("itr_cost", itr_cost(cfg)), ("routed_cost", routed_cost(cfg)),
                         ("bbs_repeats", bbs_repeats(cfg))):
         path = prefix.with_name(f"{prefix.name}_{name}.csv")
         table.to_csv(path, index=False, float_format="%.6g", lineterminator="\n")
