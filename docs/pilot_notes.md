@@ -591,9 +591,11 @@ coverage-20 synthetic test clusters.
 Medians at 1 copy: compute 3.29 s, memory 2.84 s, ITR 2.39 s.)
 
 - **Clock speed (power limit), the larger part.** The compute kernel has no memory traffic
-  but still slows 1.70× with 4 copies on 4 separate physical cores: consistent with the 15 W
+  but still slows 1.70× with 4 copies on the 4-core CPU: consistent with the 15 W
   i5-10210U lowering all cores' clock under all-core load (single-core turbo 4.2 GHz). WSL
   does not report real clock frequencies, so this is an inference, not a measured frequency.
+  Processes are not pinned to cores (WSL2 under Hyper-V), so part of the slowdown could also
+  come from two copies sharing a hyper-threaded core (audit, 6 Oct).
   Alone it caps 4 cores at ~2.35× throughput.
 - **Memory bandwidth is saturated by one process:** memory-kernel throughput stays ~1.1×.
 - **ITR = clock effect + shared cache/memory contention.** At 4 copies ITR slows 2.02× vs
