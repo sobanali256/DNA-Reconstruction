@@ -1,0 +1,44 @@
+panel,series,tau,routed_pct,exact_pct
+synthetic,default τ sweep (dev),0,0,75.85
+synthetic,default τ sweep (dev),0.5,17.49,85
+synthetic,default τ sweep (dev),0.6,23.31,87
+synthetic,default τ sweep (dev),0.7,27.41,88.38
+synthetic,default τ sweep (dev),0.8,31.44,88.77
+synthetic,default τ sweep (dev),0.9,38.36,89
+synthetic,default τ sweep (dev),0.95,44.87,88.77
+synthetic,default τ sweep (dev),0.99,61.33,88.54
+synthetic,default τ sweep (dev),1,99.62,88.59
+synthetic,length_check τ sweep (dev),0,0,75.85
+synthetic,length_check τ sweep (dev),0.5,17.49,85.54
+synthetic,length_check τ sweep (dev),0.6,23.31,87.92
+synthetic,length_check τ sweep (dev),0.7,27.41,89.44
+synthetic,length_check τ sweep (dev),0.8,31.44,90.13
+synthetic,length_check τ sweep (dev),0.9,38.36,90.9
+synthetic,length_check τ sweep (dev),0.95,44.87,91.18
+synthetic,length_check τ sweep (dev),0.99,61.33,91.38
+synthetic,length_check τ sweep (dev),1,99.62,91.56
+synthetic,default frozen τ on test,0.8,30.91,88.85
+synthetic,length_check frozen τ on test,0.99,60.13,91.25
+synthetic,reference: BBS only (dev),,,75.8462
+synthetic,reference: full ITR (dev),,,88.7436
+microsoft,default τ sweep (dev),0,0,96
+microsoft,default τ sweep (dev),0.5,1.83,95.83
+microsoft,default τ sweep (dev),0.6,3.57,95.57
+microsoft,default τ sweep (dev),0.7,4.8,95.1
+microsoft,default τ sweep (dev),0.8,6.3,94.63
+microsoft,default τ sweep (dev),0.9,9.6,93.77
+microsoft,default τ sweep (dev),0.95,14.47,92.47
+microsoft,default τ sweep (dev),0.99,30.73,90.2
+microsoft,default τ sweep (dev),1,99.53,87.83
+microsoft,length_check τ sweep (dev),0,0,96
+microsoft,length_check τ sweep (dev),0.5,1.83,96.03
+microsoft,length_check τ sweep (dev),0.6,3.57,96.13
+microsoft,length_check τ sweep (dev),0.7,4.8,96.13
+microsoft,length_check τ sweep (dev),0.8,6.3,96
+microsoft,length_check τ sweep (dev),0.9,9.6,95.93
+microsoft,length_check τ sweep (dev),0.95,14.47,95.93
+microsoft,length_check τ sweep (dev),0.99,30.73,95.9
+microsoft,length_check τ sweep (dev),1,99.53,95.8
+microsoft,default frozen τ on test,0,0,95.53
+microsoft,reference: BBS only (dev),,,96
+microsoft,reference: full ITR (dev),,,87.8333

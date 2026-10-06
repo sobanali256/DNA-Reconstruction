@@ -1,0 +1,16 @@
+row,auroc,ci95_low,ci95_high,n_bbs_failures_with_output,note
+Microsoft (real),0.933,0.9116,0.9491,304,
+"Synthetic, pooled",0.9466,0.9408,0.9525,2157,
+3% · 5×,0.9635,0.8983,0.9851,13,
+6% · 5×,0.7947,0.7578,0.8304,239,
+9% · 5×,0.7028,0.6526,0.7508,582,
+12% · 5×,0.6034,0.4712,0.7298,683,
+3% · 10×,,,,0,not computable (no BBS failures)
+6% · 10×,0.9539,,,6,CI not computable (too few failures)
+6% · 10× · hp,0.8582,0.7998,0.9003,98,
+9% · 10×,0.8971,0.8612,0.925,120,
+12% · 10×,0.7775,0.7425,0.8091,392,
+3% · 20×,,,,0,not computable (no BBS failures)
+6% · 20×,,,,0,not computable (no BBS failures)
+9% · 20×,,,,0,not computable (no BBS failures)
+12% · 20×,0.9357,0.8092,0.9758,24,

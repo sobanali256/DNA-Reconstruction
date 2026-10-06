@@ -1,0 +1,13 @@
+kernel,copies,median_seconds_per_process,slowdown,throughput_vs_1
+compute kernel,1,3.2885,1,1
+compute kernel,2,3.78925,1.15227,1.7357
+compute kernel,4,5.59525,1.70146,2.35092
+compute kernel,8,11.6762,3.55062,2.25313
+ITR,1,2.3949,1,1
+ITR,2,2.745,1.14619,1.74492
+ITR,4,4.8267,2.01541,1.98471
+ITR,8,14.8666,6.20763,1.28874
+memory kernel,1,2.8417,1,1
+memory kernel,2,5.36455,1.8878,1.05944
+memory kernel,4,9.8845,3.47838,1.14996
+memory kernel,8,20.2189,7.11507,1.12437

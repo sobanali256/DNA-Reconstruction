@@ -1,0 +1,8 @@
+method,workers,seconds,exact_pct,status
+BBS only,1,29.5566,76.2967,measured (BBS stage)
+BBS only,4,13.1936,76.2967,measured (BBS stage)
+"Cascade, primary",1,337.525,88.8462,measured
+"Cascade, primary",4,162.417,88.8462,measured
+ITR only (full),1,3212.77,88.6813,measured on a different day (~6-7% slower)
+ITR only (full),4,1582.51,88.6813,measured on a different day (~6-7% slower)
+"Cascade, length check",1,1048.92,91.2527,estimated (not timed)
