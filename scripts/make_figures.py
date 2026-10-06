@@ -444,7 +444,10 @@ def f9_time_vs_accuracy(d: dict, cfg: dict):
         "adaptive": {1: cells.loc["serial_p1", "makespan_s_median"], 4: cells.loc["dynamic_p4", "makespan_s_median"]},
         "itr_only": {1: itr.loc["serial_p1", "makespan_s_median"], 4: itr.loc["dynamic_p4", "makespan_s_median"]},
     }
-    lc_est = cells.loc["serial_p1", "bbs_s_median"] + cost.loc["adaptive_lengthcheck", "routed_itr_s_median"]
+    # The routed-cost sums come from the full-ITR day; rescale to the cascade day by the primary
+    # cascade's own ratio (its ITR stage as measured / the same clusters on the full-ITR day).
+    day = cells.loc["serial_p1", "itr_s_median"] / cost.loc["adaptive", "routed_itr_s_median"]
+    lc_est = cells.loc["serial_p1", "bbs_s_median"] + cost.loc["adaptive_lengthcheck", "routed_itr_s_median"] * day
     fig, ax = plt.subplots(figsize=(COL1, 2.6))
     for method, by_p in points.items():
         label, color, marker = METHODS[method]

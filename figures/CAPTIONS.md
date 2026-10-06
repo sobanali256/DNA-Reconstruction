@@ -70,4 +70,6 @@ adaptive runs. Full ITR was timed on a different day than the cascades; the same
 clusters ran about 6–7% slower that day, so the measured full-ITR/cascade ratio (9.5× serial,
 9.7× on four workers) is about 9× after correction. The length-check cascade was not timed:
 its point is BBS stage time plus the summed controlled ITR time of its 5,472 routed clusters,
-taken from the serial full-ITR runs (an estimate). Medians of three repetitions.
+taken from the serial full-ITR runs and rescaled to the cascade day by the primary cascade's
+measured ratio (307.4 s measured vs 324.6 s for the same clusters on the full-ITR day), an
+estimate of ≈ 1,050 s. Medians of three repetitions.
