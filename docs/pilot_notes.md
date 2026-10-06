@@ -569,7 +569,7 @@ Median of 3 repetitions (makespan = whole run: BBS + route + ITR):
   the ITR cache the 2,813 routed clusters are ~11% of full-ITR compute time while being 31%
   of clusters (209 vs 783 ms/cluster, mixed-speed cache times: approximate cost only). The
   controlled full-ITR timing for RQ0 is `configs/final/scaling_itr_only.yaml` (added after
-  the freeze, timing only; pending).
+  the freeze, timing only; results in Day 12: 10.1% measured).
 
 ### Contention probe: why ITR tasks slow down (diagnostic, not a timing result)
 
@@ -618,3 +618,48 @@ cache/memory contention. The probe's ITR throughput (1.98×) matches the measure
 workers are slower than 4. On this laptop the speedup is bounded by the platform's power and
 memory system, not by the parallel design; a CPU with sustained all-core clocks should scale
 better (expectation, not a claim).
+
+## Day 12 (6 Oct 2026): full-ITR timing baseline (RQ0)
+
+`configs/final/scaling_itr_only.yaml` (added after the freeze; timing only, no method change):
+ITR on **all** 9,100 synthetic test clusters, cells serial p1 and dynamic p4, 1 warm-up +
+3 repetitions each, invocation `20261006-033257` (overnight 5–6 Oct), commit `854bd90`
+(clean, pinned engines). Summary: `analysis/scaling_summary.py
+configs/final/scaling_itr_only.yaml` → `results/summary/scaling_itr_only_synthetic_test_
+{runs,cells}.csv`.
+
+**Integrity (6 measured runs + 1 warm-up):** status complete; 9,100 rows, exactly the test
+IDs; every cluster ITR ok (no timeout/crash; slowest 1.4–2.2 s serial, 2.6–3.0 s at p4);
+1,820 tasks per run, each ok with one launch; peak concurrency = workers; ITR output
+identical to the ITR test cache `synthetic_test_itr-20261002-161609-r1` on every cluster in
+every run. Log clean. Repetitions are tight (serial 3,206–3,232 s; p4 1,577–1,592 s).
+
+Median of 3 repetitions, compared with the adaptive campaign (Day 11, same clusters):
+
+| | Serial p1 (s) | Dynamic p4 (s) | Speedup p4 | Test exact (synthetic) |
+|---|---|---|---|---|
+| Full ITR (9,100 to ITR) | 3,212.8 | 1,582.5 | 2.03× | 88.68% |
+| Adaptive τ 0.8 (2,813 to ITR) | 337.5 | 162.4 | 2.08× | 88.85% |
+| Full ITR / adaptive | **9.5×** | **9.7×** | | |
+
+- **RQ0 answered:** the cascade matches full ITR's accuracy (+0.17 pt, Day 10) at ~1/10 of
+  its time. Routing saves far more than parallelism here: 9.5× from routing vs ~2× from 4
+  cores; together, full ITR serial / adaptive p4 = **19.8×**.
+- **Why routing saves more than the 31% routed share suggests:** measured with controlled
+  times, the 2,813 routed clusters are **10.1%** of full-ITR compute (115 vs 460 ms/cluster;
+  the Day 11 cache estimate was ~11%). ITR cost grows with coverage (mean 49 / 204 / 849 ms
+  at coverage 5 / 10 / 20), and BBS is least confident on low-coverage clusters, which are
+  ITR's cheapest (routed: 1,862 coverage 5, 898 coverage 10, 53 coverage 20). This is a property of the grid, not a general guarantee: a workload whose
+  hard clusters are high-coverage would save less.
+- **Full-ITR speedup at p4 is 2.03×**, the same per-task slowdown as Day 11 (independent
+  check of the contention explanation on a different, coverage-balanced task mix).
+- **Length-check variant (τ 0.99, 5,472 routed) was not timed.** Estimate from these
+  controlled per-cluster times (approximate, not a timing result): its routed clusters are
+  ~33.5% of full-ITR compute (~1,075 s serial ITR + ~30 s BBS ≈ 1,100 s, ~3× faster than
+  full ITR) for 91.25% exact vs 88.68%.
+
+**Paper wording (both):** On the synthetic test split, routing only low-confidence clusters
+to ITR gave the same accuracy as running ITR on every cluster (88.85% vs 88.68% exact) in
+one tenth of the time (337 s vs 3,213 s serial; 162 s vs 1,583 s on 4 workers). The routed
+clusters are 31% of clusters but only 10% of ITR's compute, because BBS's low-confidence
+clusters are mostly low-coverage ones, which ITR handles fastest.

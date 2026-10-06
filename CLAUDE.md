@@ -219,10 +219,17 @@ To read a .docx: unzip `word/document.xml` and strip tags (python zipfile + rege
   2/3), so good clusters were marked timeout. Limit now 30 s ("too-slow" takes ~230 s); 5/5
   pass under full load, 217/217 idle. Real runs (60 s, max ~8.5 s, zero timeouts) unaffected.
   Reviewed (no findings) and pushed (`307c39b..eee2189`).
-  **Next (Week 3), in order:** (1) the user runs the full scaling campaign overnight
-  (`configs/final/scaling.yaml`, idle laptop, timing protocol); (2) integrity check of every
-  scaling run + `analysis/scaling_summary.py`; (3) figures (`scripts/make_figures.py`, not
-  built); (4) writing brief update. After (2)–(3) experimentation is complete.
+- 5 Oct 2026: scaling campaign done (27/27 runs clean; `854bd90`, `docs/pilot_notes.md`
+  Day 11): dynamic p4 **2.08×** (eff. 0.52), p8 (HT) slower than p4; dynamic beats static by
+  ~5% at p4 (imbalance 1.003 vs 1.061). Sub-linear speedup = per-task slowdown (clock under
+  all-core load + memory contention), shown by `scripts/contention_probe.py`.
+- 6 Oct 2026: full-ITR timing baseline (`configs/final/scaling_itr_only.yaml`, added after
+  the freeze, timing only) done, 6/6 runs clean, output = ITR cache. **RQ0:** full ITR
+  3,213 s serial / 1,583 s p4 vs adaptive 337 / 162 s (**9.5–9.7×**) at equal accuracy
+  (88.68 vs 88.85%); routed clusters = 10.1% of ITR compute (Day 12 notes).
+  **Next:** (1) figures (`scripts/make_figures.py`, not built); (2) writing brief update.
+  Experimentation is complete apart from optional items (BBS run-to-run variation on full
+  data, skewed compositions).
 - Sanity targets **verified** in the BBS paper (iScience 2025, Table 2, "Srinivasavaradhan
   et al." = Microsoft CNR, all 10,000 clusters, default parameters, beam 20): success rate
   (exact match) BBS 94.77%, ITR 87.58%, CPL 94.93%; ITR took 7,352 s (~0.74 s/cluster, i9-13900H).

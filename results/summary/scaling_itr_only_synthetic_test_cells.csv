@@ -1,0 +1,3 @@
+cell,scheduler,workers,hyperthreaded,n_runs,makespan_s_median,makespan_s_q1,makespan_s_q3,makespan_s_min,makespan_s_max,itr_s_median,itr_s_q1,itr_s_q3,itr_s_min,itr_s_max,bbs_s_median,utilization_median,imbalance_median,peak_concurrency_max,itr_timeouts,speedup,itr_speedup,efficiency,itr_efficiency
+serial_p1,serial,1,False,3,3212.7747,3209.6002,3222.5499,3206.4256,3232.3250,3212.6493,3209.4743,3222.4428,3206.2994,3232.2363,0.0000,1.0000,1.0000,1,0,1.0000,1.0000,1.0000,1.0000
+dynamic_p4,dynamic,4,False,3,1582.5068,1579.7147,1587.2632,1576.9225,1592.0197,1582.4133,1579.6238,1587.1718,1576.8343,1591.9304,0.0000,0.9997,1.0003,4,0,2.0302,2.0302,0.5075,0.5076
