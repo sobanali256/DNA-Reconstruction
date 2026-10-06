@@ -49,6 +49,21 @@ SCHEDULERS = {"serial": ("serial", INK2, "o"), "dynamic": ("dynamic", SLOT[0], "
 KERNELS = {"compute": ("compute kernel", SLOT[0], "o"), "memory": ("memory kernel", SLOT[1], "s"),
            "itr": ("ITR", SLOT[2], "^")}
 COL1, COL2 = 3.5, 7.16  # IEEE single / double column width (inches)
+HT_SHADE = "#f0efec"
+
+
+def marker_handle(marker, color, label, hollow=False, edge="white", size=5.5):
+    return plt.Line2D([], [], linestyle="", marker=marker, markersize=size, label=label,
+                      markerfacecolor="white" if hollow else color,
+                      markeredgecolor=color if hollow else edge, markeredgewidth=1.2 if hollow else 0.5)
+
+
+def line_handle(color, label, style="-", width=1.4, marker=None):
+    return plt.Line2D([], [], color=color, linestyle=style, linewidth=width, marker=marker, label=label)
+
+
+def patch_handle(color, label):
+    return matplotlib.patches.Patch(facecolor=color, edgecolor="none", label=label)
 
 
 def style() -> None:
@@ -165,9 +180,11 @@ def f2_exact_by_condition(d: dict, cfg: dict):
     ax.set_xlabel("Exact-match rate on the test split (%)")
     ax.set_xlim(0, 101)
     ax.grid(axis="y", visible=False)
-    ax.legend(loc="upper center", bbox_to_anchor=(0.45, 1.09), ncol=2, handletextpad=0.2, columnspacing=0.9)
-    ax.text(1.0, -0.11, "rows: error rate · coverage (hp = homopolymer bias); Microsoft cascade (τ 0) = BBS only",
-            transform=ax.transAxes, ha="right", va="top", fontsize=5.6, color=MUTED)
+    handles = [marker_handle(m, c, l) for l, c, m in METHODS.values()]
+    handles.append(line_handle(GRID, "range across methods", width=2.2))
+    ax.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.42, 1.145), ncol=2,
+              handletextpad=0.3, columnspacing=0.9)
+    ax.set_ylabel("Error rate · coverage", labelpad=2)
     return fig
 
 
@@ -189,8 +206,8 @@ def f3_rescue_harm(d: dict, cfg: dict):
             harm.append(sub.harmed_vs_bbs.iloc[0] if len(sub) else np.nan)
         resc, harm = np.array(resc, float), np.array(harm, float)
         # pooled rows dwarf per-condition rows: symmetric log scale keeps both readable
-        ax.barh(y, resc, height=0.62, color=POS, label="rescued (BBS wrong → right)")
-        ax.barh(y, -harm, height=0.62, color=NEG, label="harmed (BBS right → wrong)")
+        ax.barh(y, resc, height=0.62, color=POS, label="Rescued: BBS wrong, method right")
+        ax.barh(y, -harm, height=0.62, color=NEG, label="Harmed: BBS right, method wrong")
         ax.set_xscale("symlog", linthresh=10)
         lim = 3000
         ax.set_xlim(-lim, lim)
@@ -212,7 +229,7 @@ def f3_rescue_harm(d: dict, cfg: dict):
                 ax.text(-h * 1.15 - 0.5, yy, f"{int(h)}", va="center", ha="right", fontsize=5.6, color=INK2)
         ax.set_title(title, loc="left")
         ax.grid(axis="y", visible=False)
-        ax.set_xlabel("clusters (symmetric log scale)")
+        ax.set_xlabel("Clusters (symmetric log scale)")
     axes[0].set_yticks(y, [r[2] for r in rows])
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.55, 1.04), ncol=2)
@@ -241,12 +258,14 @@ def f4_auroc(d: dict, cfg: dict):
         note = f"{a:.2f}" if has_ci else f"{a:.2f} (CI n/a: {n} BBS failures)"
         ax.text((h if has_ci else a) + 0.012, yy, note, va="center", fontsize=6, color=INK2)
     ax.axvline(0.5, color=AXIS, linewidth=0.8, linestyle=(0, (3, 2)))
-    ax.text(0.497, y[-1] - 0.55, "chance", fontsize=5.8, color=MUTED, va="top", ha="right")
+    handles = [marker_handle("o", SLOT[0], "AUROC"), line_handle(SLOT[0], "95% bootstrap CI", width=1.2),
+               line_handle(AXIS, "chance (0.5)", style=(0, (3, 2)), width=0.8)]
+    ax.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.45, 1.075), ncol=3, handlelength=1.6)
     ax.axhline(y[1] - 0.5, color=AXIS, linewidth=0.6)
     ax.set_yticks(y, [r[0] for r in rows])
     ax.set_xlim(0.44, 1.12)
     ax.set_xticks([0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-    ax.set_xlabel("AUROC of BBS confidence for BBS failure (test; 95% bootstrap CI)")
+    ax.set_xlabel("AUROC of BBS confidence for predicting BBS failure (test)")
     ax.grid(axis="y", visible=False)
     return fig
 
@@ -263,7 +282,7 @@ def f5_tau_tradeoff(d: dict, cfg: dict):
             label, color, marker = METHODS[method]
             dv = dev[dev.selector == selector].sort_values("tau")
             ax.plot(dv.fallback_ratio * 100, dv.exact_rate * 100, color=color, marker=marker,
-                    markersize=3.2, label=f"{label} (dev sweep)")
+                    markersize=3.2, label=f"{label}: τ sweep (dev)")
             tau = frozen[fam].get(selector)
             if tau is None:
                 continue
@@ -288,8 +307,10 @@ def f5_tau_tradeoff(d: dict, cfg: dict):
     for ax in axes:
         ax.yaxis.set_major_locator(matplotlib.ticker.MultipleLocator(2 if ax is axes[1] else 4))
     handles, labels = axes[0].get_legend_handles_labels()
-    handles.append(plt.Line2D([], [], marker="o", linestyle="", markerfacecolor="white", markeredgecolor=INK2))
-    labels.append("frozen τ applied to test")
+    handles += [marker_handle("^", METHODS["adaptive"][1], "Primary: frozen τ on test", hollow=True, size=7),
+                marker_handle("D", METHODS["adaptive_lengthcheck"][1], "Length check: frozen τ on test",
+                              hollow=True, size=6)]
+    labels += [h.get_label() for h in handles[-2:]]
     fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, 1.1), ncol=3)
     fig.tight_layout(rect=(0, 0, 1, 0.9))
     return fig
@@ -302,9 +323,7 @@ def f6_speedup(d: dict, cfg: dict):
     fig, axes = plt.subplots(1, 2, figsize=(COL2, 2.4))
     ws = [1, 2, 4, 8]
     for ax, metric in zip(axes, ("speedup", "efficiency")):
-        ax.axvspan(cfg["physical_cores"] + 0.5, 8.6, color="#f0efec", zorder=0)
-        ax.text(6.55, 0.97, "hyper-threaded\n(> 4 physical cores)", ha="center", va="top", fontsize=5.8,
-                color=MUTED, transform=ax.get_xaxis_transform())
+        ax.axvspan(cfg["physical_cores"] + 0.5, 8.6, color=HT_SHADE, zorder=0)
         ideal = ws if metric == "speedup" else [1] * len(ws)
         ax.plot(ws, ideal, color=AXIS, linewidth=1.0, linestyle=(0, (3, 2)), label="ideal")
         for sched in ("dynamic", "static"):
@@ -317,21 +336,24 @@ def f6_speedup(d: dict, cfg: dict):
             p = c.workers.values
             mid = c.speedup.values if metric == "speedup" else c.efficiency.values
             div = 1 if metric == "speedup" else lo.index.values
-            ax.plot(p, mid, color=color, marker=marker, label=label)
+            ax.plot(p, mid, color=color, marker=marker,
+                    label=label + (" (1 worker = serial run)" if sched == "static" else ""))
             ax.vlines(lo.index, lo.values / div, hi.values / div, color=color, linewidth=1.0)
         ax.set_xticks(ws, [str(w) for w in ws])
         ax.set_xlim(0.6, 8.6)
         ax.set_xlabel("Workers")
     axes[0].set_ylabel("Speedup over serial (whole run)")
     axes[0].set_ylim(0, 8.4)
-    axes[0].text(0.03, 0.62, "whiskers: min–max of 3 repetitions", transform=axes[0].transAxes,
-                 fontsize=5.8, color=MUTED)
     axes[1].set_ylabel("Efficiency (speedup / workers)")
     axes[1].set_ylim(0, 1.1)
     axes[0].set_title("(a) Speedup", loc="left")
     axes[1].set_title("(b) Efficiency", loc="left")
-    axes[0].legend(loc="upper left")
-    fig.tight_layout()
+    handles, labels = axes[0].get_legend_handles_labels()
+    handles += [plt.Line2D([], [], color=INK2, marker="|", markersize=7, linestyle="", markeredgewidth=1.0),
+                patch_handle(HT_SHADE, "")]
+    labels += ["min–max of 3 repetitions", "hyper-threaded (> 4 physical cores)"]
+    fig.tight_layout(rect=(0, 0, 1, 0.9))
+    fig.legend(handles, labels, loc="lower center", bbox_to_anchor=(0.5, 0.88), ncol=3)
     return fig
 
 
@@ -355,19 +377,24 @@ def f7_schedulers(d: dict, cfg: dict):
             x += 1.25
         x += 0.5
     for ax in axes:
-        ax.set_xticks(xt, xl, rotation=0, fontsize=6.3)
+        ax.set_xticks(xt, [""] * len(xt))
+        ax.tick_params(axis="x", length=0)
         ax.grid(axis="x", visible=False)
         trans = ax.get_xaxis_transform()
         starts = [0, 3.0, 7.25]
         for (p, scheds), start in zip(groups, starts):
-            ax.text(start + (len(scheds) - 1) * 1.25 / 2, -0.2, f"{p} workers" + (" (HT)" if p > cfg["physical_cores"] else ""),
+            ax.text(start + (len(scheds) - 1) * 1.25 / 2, -0.06, f"{p} workers" + (" (HT)" if p > cfg["physical_cores"] else ""),
                     transform=trans, ha="center", va="top", fontsize=6.5, color=INK2)
     axes[0].set_ylabel("Makespan (s)")
     axes[1].set_ylabel("Imbalance (max / mean busy time)")
     axes[1].axhline(1, color=AXIS, linewidth=0.8, linestyle=(0, (3, 2)))
-    axes[0].set_title("(a) Makespan, 3 repetitions (bar = median)", loc="left")
+    axes[0].set_title("(a) Makespan", loc="left")
     axes[1].set_title("(b) Load imbalance", loc="left")
-    fig.tight_layout()
+    handles = [marker_handle(m, c, l) for k, (l, c, m) in SCHEDULERS.items() if k != "serial"]
+    handles += [line_handle(INK2, "median of 3 repetitions (dots)", width=1.2),
+                line_handle(AXIS, "perfect balance (1.0)", style=(0, (3, 2)), width=0.8)]
+    fig.tight_layout(rect=(0, 0, 1, 0.9))
+    fig.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, 0.88), ncol=5, handletextpad=0.3)
     return fig
 
 
@@ -381,11 +408,9 @@ def f8_contention(d: dict, cfg: dict):
     med["slowdown"] = med.seconds / med.kind.map(base)
     fig, ax = plt.subplots(figsize=(COL1, 2.4))
     copies = sorted(med.copies.unique())
-    ax.plot(copies, copies, color=AXIS, linewidth=1.0, linestyle=(0, (3, 2)))
-    ax.text(3.0, 4.2, "no gain from\nmore copies", fontsize=5.8, color=MUTED, ha="right")
+    ax.plot(copies, copies, color=AXIS, linewidth=1.0, linestyle=(0, (1, 1.5)))
     ax.axhline(1, color=AXIS, linewidth=1.0, linestyle=(0, (3, 2)))
-    ax.text(1.0, 0.95, "no slowdown (perfect scaling)", fontsize=5.8, color=MUTED, va="top")
-    ax.axvspan(cfg["physical_cores"] * 1.41, 9.5, color="#f0efec", zorder=0)
+    ax.axvspan(cfg["physical_cores"] * 1.41, 9.5, color=HT_SHADE, zorder=0)
     for kind, (label, color, marker) in KERNELS.items():
         k = med[med.kind == kind].sort_values("copies")
         ax.plot(k.copies, k.slowdown, color=color, marker=marker, label=label)
@@ -400,7 +425,11 @@ def f8_contention(d: dict, cfg: dict):
     ax.set_ylim(0.8, 10)
     ax.set_xlabel("Identical processes started together")
     ax.set_ylabel("Per-process slowdown (median)")
-    ax.legend(loc="upper left")
+    handles, labels = ax.get_legend_handles_labels()
+    handles += [line_handle(AXIS, "no slowdown (perfect scaling)", style=(0, (3, 2)), width=1.0),
+                line_handle(AXIS, "slowdown = copies (no gain)", style=(0, (1, 1.5)), width=1.0),
+                patch_handle(HT_SHADE, "> 4 copies (hyper-threading)")]
+    ax.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=2, columnspacing=1.0)
     return fig
 
 
@@ -431,10 +460,10 @@ def f9_time_vs_accuracy(d: dict, cfg: dict):
         ax.annotate(label, (x_mid if ha == "center" else by_p[1], t[method]), textcoords="offset points",
                     xytext=offset, ha=ha, fontsize=6.2, color=INK2)
     label, color, marker = METHODS["adaptive_lengthcheck"]
-    ax.scatter([lc_est], [t["adaptive_lengthcheck"]], s=30, marker=marker, color=color, edgecolor=INK2,
-               linewidth=0.5, zorder=3)
-    ax.annotate(label + " (serial, estimated)", (lc_est, t["adaptive_lengthcheck"]), textcoords="offset points",
-                xytext=(-8, 0), ha="right", va="center", fontsize=6.2, color=INK2)
+    ax.scatter([lc_est], [t["adaptive_lengthcheck"]], s=30, marker=marker, color=color, edgecolor=INK,
+               linewidth=0.9, zorder=3)
+    ax.annotate(label, (lc_est, t["adaptive_lengthcheck"]), textcoords="offset points",
+                xytext=(0, 9), ha="center", va="bottom", fontsize=6.2, color=INK2)
     ax.set_xscale("log")
     ax.set_xticks([10, 30, 100, 300, 1000, 3000], ["10", "30", "100", "300", "1,000", "3,000"])
     ax.minorticks_off()
@@ -442,11 +471,10 @@ def f9_time_vs_accuracy(d: dict, cfg: dict):
     ax.set_ylim(72, 95)
     ax.set_xlabel("Wall time on 9,100 test clusters (s, log scale)")
     ax.set_ylabel("Exact-match rate, test (%)")
-    ax.scatter([], [], s=30, marker="o", color=MUTED, label="1 worker (serial)")
-    ax.scatter([], [], s=30, marker="o", facecolor="white", edgecolor=MUTED, linewidth=1.2, label="4 workers (dynamic)")
-    ax.legend(loc="lower right")
-    ax.text(0.01, 0.99, "BBS only = BBS stage time; full ITR timed on a different day (≈6% slower)",
-            transform=ax.transAxes, fontsize=5.6, color=MUTED, va="top")
+    handles = [marker_handle("o", MUTED, "1 worker (serial)"),
+               marker_handle("o", MUTED, "4 workers (dynamic)", hollow=True),
+               marker_handle("o", MUTED, "1 worker, estimated", edge=INK)]
+    ax.legend(handles=handles, loc="lower right", title="measured unless noted", title_fontsize=6.2)
     return fig
 
 
